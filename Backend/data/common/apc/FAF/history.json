@@ -1,0 +1,15 @@
+{
+  "attempts": [
+    {
+      "id": "a001",
+      "status": "ok",
+      "message": null,
+      "source_file": "ok.xlsx",
+      "uploaded_at": "2026-09-17T21:28:05.508404+00:00",
+      "uploaded_by": "Alejandro Mart\u00edn Iglesias",
+      "nation": "FAF",
+      "rows": 4,
+      "version": 1
+    }
+  ]
+}

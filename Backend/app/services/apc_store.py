@@ -7,6 +7,7 @@ from pathlib import Path
 from fastapi import HTTPException
 from fastapi.responses import FileResponse
 
+from app.catalog.fleet import NATIONS
 from app.services.aircraft_store import get_aircraft
 from app.services.source_validation import Context, load_rules, run_check, to_named_rows
 
@@ -33,7 +34,7 @@ def _uploads_dir(nation: str) -> Path:
 
 
 def _history_path(nation: str) -> Path:
-    return _common_dir(nation) / "history.json"
+    return _DATA / "common" / "apc" / nation / "history.json"
 
 
 def _version_stem(version: int) -> str:
@@ -57,7 +58,9 @@ def _load_history(nation: str) -> list[dict]:
 
 
 def _write_history(nation: str, attempts: list[dict]) -> None:
-    _history_path(nation).write_text(json.dumps({"attempts": attempts}, indent=2), encoding="utf-8")
+    path = _history_path(nation)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({"attempts": attempts}, indent=2), encoding="utf-8")
 
 
 def _load_assigned(aircraft) -> dict | None:
@@ -67,14 +70,15 @@ def _load_assigned(aircraft) -> dict | None:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def _with_assigned(attempts: list[dict], assigned: dict | None) -> list[dict]:
+def _with_assigned(attempts: list[dict], assigned: dict | None, nation: str) -> list[dict]:
     source_id = assigned.get("source_id") if assigned else None
-    version = assigned.get("version") if assigned else None
+    source_nation = assigned.get("nation") if assigned else None
     out = []
     for item in attempts:
         row = dict(item)
-        row["current"] = item.get("status") == "ok" and (
-            (source_id and item.get("id") == source_id) or (not source_id and version and item.get("version") == version)
+        row["nation"] = row.get("nation") or nation
+        row["current"] = item.get("status") == "ok" and bool(source_id) and item.get("id") == source_id and (
+            not source_nation or source_nation == nation
         )
         out.append(row)
     return out
@@ -83,9 +87,20 @@ def _with_assigned(attempts: list[dict], assigned: dict | None) -> list[dict]:
 def list_uploads(aircraft_id: str) -> dict:
     aircraft = get_aircraft(aircraft_id)
     assigned = _load_assigned(aircraft)
-    history = _with_assigned(_load_history(aircraft.nation), assigned)
+    history = _with_assigned(_load_history(aircraft.nation), assigned, aircraft.nation)
+    others: list[dict] = []
+    for entry in NATIONS:
+        code = entry["code"]
+        if code == aircraft.nation:
+            continue
+        others.extend(
+            item
+            for item in _with_assigned(_load_history(code), assigned, code)
+            if item.get("status") == "ok"
+        )
     return {
         "history": history,
+        "others": others,
         "latest": assigned.get("source_id") if assigned else None,
         "current": assigned,
         "nation": aircraft.nation,
@@ -178,19 +193,20 @@ def _rows_from_attempt(nation: str, attempt: dict) -> list[dict]:
     return to_named_rows(ctx.rows, rules)
 
 
-def select_attempt(aircraft_id: str, attempt_id: str) -> dict:
+def select_attempt(aircraft_id: str, attempt_id: str, nation: str | None = None) -> dict:
     aircraft = get_aircraft(aircraft_id)
-    found = next((item for item in _load_history(aircraft.nation) if item.get("id") == attempt_id), None)
+    source_nation = nation or aircraft.nation
+    found = next((item for item in _load_history(source_nation) if item.get("id") == attempt_id), None)
     if not found or found.get("status") != "ok":
         raise HTTPException(status_code=404, detail="Fleet APC not found")
-    rows = _rows_from_attempt(aircraft.nation, found)
-    source = _source_bytes(aircraft.nation, found)
+    rows = _rows_from_attempt(source_nation, found)
+    source = _source_bytes(source_nation, found)
     payload = {
         "rows": rows,
         "source_file": found.get("source_file"),
         "uploaded_at": found.get("uploaded_at"),
         "uploaded_by": found.get("uploaded_by"),
-        "nation": aircraft.nation,
+        "nation": source_nation,
         "version": found.get("version"),
         "source_id": found["id"],
     }
@@ -218,16 +234,17 @@ def delete_attempt(aircraft_id: str, attempt_id: str) -> dict:
     return {"ok": True, "id": attempt_id}
 
 
-def download_attempt(aircraft_id: str, attempt_id: str) -> FileResponse:
+def download_attempt(aircraft_id: str, attempt_id: str, nation: str | None = None) -> FileResponse:
     aircraft = get_aircraft(aircraft_id)
-    attempts = _load_history(aircraft.nation)
+    source_nation = nation or aircraft.nation
+    attempts = _load_history(source_nation)
     found = next((item for item in attempts if item.get("id") == attempt_id), None)
     if not found:
         raise HTTPException(status_code=404, detail="Upload not found")
-    path = next(iter(sorted(_uploads_dir(aircraft.nation).glob(f"{attempt_id}.*"))), None)
+    path = next(iter(sorted(_uploads_dir(source_nation).glob(f"{attempt_id}.*"))), None)
     if (not path or not path.is_file()) and found.get("version"):
         path = next(
-            (item for item in sorted(_common_dir(aircraft.nation).glob(f"{_version_stem(int(found['version']))}.*")) if item.suffix.lower() != ".json"),
+            (item for item in sorted(_common_dir(source_nation).glob(f"{_version_stem(int(found['version']))}.*")) if item.suffix.lower() != ".json"),
             None,
         )
     if not path or not path.is_file():

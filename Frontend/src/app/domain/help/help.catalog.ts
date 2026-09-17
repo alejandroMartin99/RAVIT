@@ -109,7 +109,7 @@ export const HELP_GUIDES: Record<string, HelpGuide> = {
         heading: 'What you can do',
         items: [
           'Upload a new .xlsx / .xlsm. It is stored in the fleet library and assigned to this aircraft.',
-          'Use on this aircraft: pick a successful version already in the library of the same air force (FAF, RAF, GAF, SAF).',
+          'Use on this aircraft: pick a successful version from this air force, or from another fleet if needed.',
           'Download the original file from the library.',
           'Delete a version from the library. Aircraft that already use it keep their assigned copy.',
         ],

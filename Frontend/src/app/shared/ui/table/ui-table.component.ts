@@ -118,8 +118,11 @@ export class UiTableComponent<T = unknown> {
   }
 
   badgeClass(value: string): string {
-    if (value === 'Y' || value === 'OK') {
+    if (value === 'Y' || value === 'OK' || value === 'Delivered') {
       return 'is-y';
+    }
+    if (value === 'On going') {
+      return 'is-on';
     }
     if (value === 'Fail') {
       return 'is-fail';

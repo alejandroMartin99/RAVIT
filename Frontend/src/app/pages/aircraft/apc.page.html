@@ -62,9 +62,9 @@
   }
 
   @if (ingest()) {
-    @if (history().length && !uploading()) {
+    @if (!uploading() && (history().length || others().length || current())) {
       <div class="toolbar">
-        <p class="hint tight">Fleet library for {{ nation() || 'this air force' }}. Upload a new file or assign an existing version to this aircraft. This aircraft keeps a single APC.</p>
+        <p class="hint tight">First pick an APC from this air force. Other fleets are listed below if you need to assign one of those instead.</p>
         <button type="button" class="go" (click)="openPicker()">Upload new APC</button>
       </div>
       @if (current(); as item) {
@@ -80,6 +80,8 @@
           </div>
         </div>
       }
+      <p class="step">This air force · {{ nation() }}</p>
+      @if (history().length) {
       <app-ui-table
         [columns]="histCols()"
         [rows]="history()"
@@ -161,6 +163,64 @@
           </div>
         </ng-template>
       </app-ui-table>
+      } @else {
+        <p class="hint tight">No APC in this air force yet. Upload one or pick from another fleet below.</p>
+      }
+      @if (others().length) {
+        <p class="step lib-gap">Other air forces</p>
+        <p class="hint tight">These versions belong to other fleets. Assign one only if this air force has no matching APC.</p>
+        <app-ui-table
+          [columns]="otherCols()"
+          [rows]="others()"
+          initialSort="uploaded"
+          initialDir="desc"
+          [trackBy]="trackHistory"
+          [rowClass]="historyRowClass"
+        >
+          <ng-template uiTableCell="fleet" let-item>
+            <span class="nation">
+              <app-flag-icon [nation]="asNation(item.nation)" />
+              {{ item.nation }}
+            </span>
+          </ng-template>
+          <ng-template uiTableCell="note" let-item>
+            @if (item.current) {
+              <span class="tag">Assigned</span>
+            }
+          </ng-template>
+          <ng-template uiTableCell="actions" let-item>
+            <div class="acts">
+              @if (!item.current) {
+                <button type="button" class="icon-act" data-tip="Use on this aircraft" aria-label="Use on this aircraft" (click)="useOnAircraft(item, $event)">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                      fill="currentColor"
+                      d="M9.2 16.2 L4.8 11.8 L6.2 10.4 L9.2 13.4 L17.8 4.8 L19.2 6.2 Z"
+                    />
+                  </svg>
+                </button>
+              } @else {
+                <span class="icon-act is-off" data-tip="Use on this aircraft" aria-label="Already assigned">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                      fill="currentColor"
+                      d="M9.2 16.2 L4.8 11.8 L6.2 10.4 L9.2 13.4 L17.8 4.8 L19.2 6.2 Z"
+                    />
+                  </svg>
+                </span>
+              }
+              <button type="button" class="icon-act" data-tip="Download" aria-label="Download" (click)="download(item, $event)">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    fill="currentColor"
+                    d="M12 3.25a.75.75 0 0 1 .75.75v9.19l2.72-2.72a.75.75 0 1 1 1.06 1.06l-4 4a.75.75 0 0 1-1.06 0l-4-4a.75.75 0 0 1 1.06-1.06l2.72 2.72V4A.75.75 0 0 1 12 3.25zM5.75 18.5A.75.75 0 0 1 6.5 17.75h11a.75.75 0 0 1 0 1.5h-11a.75.75 0 0 1-.75-.75z"
+                  />
+                </svg>
+              </button>
+            </div>
+          </ng-template>
+        </app-ui-table>
+      }
     } @else if (!loading() && !uploading() && !steps().length) {
       <article class="empty">
         <p class="step">No APC loaded</p>

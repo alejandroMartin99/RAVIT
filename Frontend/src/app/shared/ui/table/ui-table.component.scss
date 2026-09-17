@@ -16,6 +16,10 @@
   background: transparent;
 }
 
+.sheet.is-bare .grid th {
+  background: transparent;
+}
+
 .sheet.filter-open,
 .sheet:has(.acts:hover) {
   overflow: visible;
@@ -112,6 +116,11 @@
 .flag.is-y {
   background: #d8f3e3;
   color: #0f7b3a;
+}
+
+.flag.is-on {
+  background: #d7e8ff;
+  color: #0b57d0;
 }
 
 .flag.is-out {

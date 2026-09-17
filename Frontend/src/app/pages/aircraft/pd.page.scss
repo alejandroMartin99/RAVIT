@@ -276,6 +276,22 @@ h2 {
   max-width: 36rem;
 }
 
+.lib-gap {
+  margin: 1.35rem 0 0.45rem;
+}
+
+.nation {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+}
+
+.nation app-flag-icon {
+  --flag-w: 1.85rem;
+  --flag-h: 1.2rem;
+}
+
 .go {
   display: inline-flex;
   align-items: center;

@@ -57,6 +57,15 @@ export class LandingPage implements OnInit {
 
   readonly fleetCols = computed<UiTableColumn<Aircraft>[]>(() => [
     { id: 'aircraft', label: 'Aircraft', value: (ac) => `MSN ${padMsn(ac.msn)}` },
+    {
+      id: 'status',
+      label: 'Status',
+      value: (ac) => this.statusLabel(ac),
+      sortValue: (ac) => this.eventStatus(ac),
+      badge: true,
+      headerClass: 'flag-col',
+      cellClass: 'flag-col',
+    },
     { id: 'airforce', label: 'Air force', value: (ac) => ac.nation },
     { id: 'chief', label: 'Aircraft chief', value: (ac) => ac.chief },
     { id: 'maintenance', label: 'Type of maintenance', value: (ac) => this.eventLabel(ac.event_type) },
@@ -105,6 +114,22 @@ export class LandingPage implements OnInit {
 
   padMsn(msn: number): string {
     return padMsn(msn);
+  }
+
+  eventStatus(ac: Aircraft): 'pending' | 'on' | 'delivered' {
+    const today = new Date().toISOString().slice(0, 10);
+    if (today > ac.transfer_of_custody) {
+      return 'delivered';
+    }
+    if (today >= ac.hang_over) {
+      return 'on';
+    }
+    return 'pending';
+  }
+
+  statusLabel(ac: Aircraft): string {
+    const labels = { pending: 'Pending', on: 'On going', delivered: 'Delivered' };
+    return labels[this.eventStatus(ac)];
   }
 
   eventLabel(type: EventType): string {

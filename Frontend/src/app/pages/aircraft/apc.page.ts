@@ -2,11 +2,13 @@ import { DatePipe } from '@angular/common';
 import { Component, ElementRef, OnInit, computed, inject, signal, viewChild } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { NationCode } from '../../domain/fleet/aircraft.model';
 import { ApcCurrent, ApcRow, ApcService, ApcUpload, ApcIngestEvent } from '../../services/apc.service';
 import { AircraftService } from '../../services/aircraft.service';
 import { PdCheckStatus } from '../../services/pd.service';
 import { WorkspaceService } from '../../services/workspace.service';
 import { ModuleIconComponent } from '../../shared/ui/module-icon/module-icon.component';
+import { FlagIconComponent } from '../../shared/ui/flag-icon/flag-icon.component';
 import { UiHelpComponent } from '../../shared/ui/help/ui-help.component';
 import { UiButtonComponent } from '../../shared/ui/button/ui-button.component';
 import { UiModalComponent } from '../../shared/ui/modal/ui-modal.component';
@@ -23,7 +25,7 @@ interface IngestStep {
 @Component({
   selector: 'app-apc',
   standalone: true,
-  imports: [RouterLink, ModuleIconComponent, UiTableComponent, UiTableCellDirective, UiModalComponent, UiButtonComponent, UiHelpComponent],
+  imports: [RouterLink, ModuleIconComponent, FlagIconComponent, UiTableComponent, UiTableCellDirective, UiModalComponent, UiButtonComponent, UiHelpComponent],
   providers: [DatePipe],
   templateUrl: './apc.page.html',
   styleUrl: './pd.page.scss',
@@ -51,6 +53,7 @@ export class ApcPage implements OnInit {
   readonly dash = computed(() => this.circ * (1 - this.percent() / 100));
 
   readonly history = signal<ApcUpload[]>([]);
+  readonly others = signal<ApcUpload[]>([]);
   readonly current = signal<ApcCurrent | null>(null);
   readonly nation = signal<string | null>(null);
   readonly rows = signal<ApcRow[]>([]);
@@ -62,7 +65,7 @@ export class ApcPage implements OnInit {
   readonly error = signal<string | null>(null);
   readonly pendingDelete = signal<ApcUpload | null>(null);
 
-  readonly trackHistory = (item: ApcUpload) => item.id;
+  readonly trackHistory = (item: ApcUpload) => `${item.nation ?? ''}-${item.id}`;
   readonly trackRow = (row: ApcRow) => `${row.position_code}-${row.pnr}-${row.snr}`;
   readonly historyRowClass = (item: ApcUpload) => ({ 'is-current': item.current, 'is-fail': item.status === 'fail' });
 
@@ -83,6 +86,11 @@ export class ApcPage implements OnInit {
       value: (item) => (item.current ? 'Assigned' : item.status === 'fail' && item.message ? item.message : '—'),
     },
     { id: 'actions', label: '', value: () => '', action: true, headerClass: 'act-col', cellClass: 'act-col' },
+  ]);
+
+  readonly otherCols = computed<UiTableColumn<ApcUpload>[]>(() => [
+    { id: 'fleet', label: 'Air force', value: (item) => item.nation || '—' },
+    ...this.histCols().filter((col) => col.id !== 'status'),
   ]);
 
   readonly dataCols = computed<UiTableColumn<ApcRow>[]>(() => [
@@ -132,9 +140,13 @@ export class ApcPage implements OnInit {
     this.pendingDelete.set(item);
   }
 
+  asNation(code?: string | null): NationCode {
+    return (code || 'SAF') as NationCode;
+  }
+
   download(item: ApcUpload, event: Event): void {
     event.stopPropagation();
-    this.apcApi.downloadHistory(this.aircraftId, item.id, item.source_file).subscribe();
+    this.apcApi.downloadHistory(this.aircraftId, item.id, item.source_file, item.nation).subscribe();
   }
 
   useOnAircraft(item: ApcUpload, event: Event): void {
@@ -142,7 +154,7 @@ export class ApcPage implements OnInit {
     if (item.status !== 'ok' || item.current) {
       return;
     }
-    this.apcApi.select(this.aircraftId, item.id).subscribe({
+    this.apcApi.select(this.aircraftId, item.id, item.nation).subscribe({
       next: () => this.reload(),
     });
   }
@@ -226,6 +238,7 @@ export class ApcPage implements OnInit {
     this.apcApi.list(this.aircraftId).subscribe({
       next: (listed) => {
         this.history.set([...(listed.history ?? [])].reverse());
+        this.others.set([...(listed.others ?? [])].reverse());
         this.current.set(listed.current ?? null);
         this.nation.set(listed.nation ?? listed.current?.nation ?? null);
         this.rows.set(listed.current?.rows ?? []);

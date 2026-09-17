@@ -89,9 +89,19 @@ def delete_apc_history(aircraft_id: str, attempt_id: str) -> dict:
     return apc_store.delete_attempt(aircraft_id, attempt_id)
 
 
+@app.get("/api/aircraft/{aircraft_id}/apc/history/{nation}/{attempt_id}/file")
+def download_apc_history_nation(aircraft_id: str, nation: str, attempt_id: str) -> FileResponse:
+    return apc_store.download_attempt(aircraft_id, attempt_id, nation)
+
+
 @app.get("/api/aircraft/{aircraft_id}/apc/history/{attempt_id}/file")
 def download_apc_history(aircraft_id: str, attempt_id: str) -> FileResponse:
     return apc_store.download_attempt(aircraft_id, attempt_id)
+
+
+@app.post("/api/aircraft/{aircraft_id}/apc/select/{nation}/{attempt_id}")
+def select_apc_nation(aircraft_id: str, nation: str, attempt_id: str) -> dict:
+    return apc_store.select_attempt(aircraft_id, attempt_id, nation)
 
 
 @app.post("/api/aircraft/{aircraft_id}/apc/select/{attempt_id}")

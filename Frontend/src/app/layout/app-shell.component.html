@@ -67,7 +67,7 @@
               </button>
               @if (item.children?.length) {
                 <div class="sub" [class.is-open]="canOpen(item) && isExpanded(item)">
-                  <div class="sub-inner">
+                  <div class="sub-inner is-stack">
                     @for (child of item.children; track child.id) {
                       @if (child.children?.length) {
                         <div class="nest-block" [class.is-open]="isNestedOpen(item, child)">

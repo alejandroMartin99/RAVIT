@@ -1,0 +1,15 @@
+{
+  "attempts": [
+    {
+      "id": "a001",
+      "status": "ok",
+      "message": null,
+      "source_file": "ok.xlsx",
+      "uploaded_at": "2026-09-17T21:36:56.943465+00:00",
+      "uploaded_by": "James Hartley Cooper",
+      "nation": "RAF",
+      "rows": 4,
+      "version": 1
+    }
+  ]
+}

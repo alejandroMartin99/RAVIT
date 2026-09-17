@@ -24,6 +24,7 @@ export class AppShellComponent {
   readonly aircraft = this.workspace.aircraft;
   readonly lockTip = signal<{ x: number; y: number } | null>(null);
   private readonly expandedId = signal<string | null>(null);
+  private readonly nestedClosed = signal<ReadonlySet<string>>(new Set());
 
   private readonly url = toSignal(
     this.router.events.pipe(
@@ -94,8 +95,8 @@ export class AppShellComponent {
     return aircraft ? `/aircraft/${aircraft.id}/${item.slug}/${child.slug}/${grand.slug}` : '/';
   }
 
-  isNestedOpen(item: SideNavItem, _child: SideNavChild): boolean {
-    return this.isExpanded(item);
+  isNestedOpen(item: SideNavItem, child: SideNavChild): boolean {
+    return this.isExpanded(item) && !this.nestedClosed().has(child.id);
   }
 
   isNestedActive(child: SideNavChild): boolean {
@@ -103,9 +104,16 @@ export class AppShellComponent {
     return segments[3] === child.slug;
   }
 
-  toggleNested(_item: SideNavItem, _child: SideNavChild, event: Event): void {
+  toggleNested(_item: SideNavItem, child: SideNavChild, event: Event): void {
     event.preventDefault();
     event.stopPropagation();
+    const next = new Set(this.nestedClosed());
+    if (next.has(child.id)) {
+      next.delete(child.id);
+    } else {
+      next.add(child.id);
+    }
+    this.nestedClosed.set(next);
   }
 
   canOpen(item: SideNavItem): boolean {
@@ -135,6 +143,7 @@ export class AppShellComponent {
       return;
     }
     this.expandedId.set(this.isExpanded(item) ? '' : item.id);
+    this.nestedClosed.set(new Set());
   }
 
   toggleSidebar(event: Event): void {

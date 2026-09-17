@@ -37,6 +37,7 @@ export interface ApcUpload {
 
 export interface ApcList {
   history: ApcUpload[];
+  others?: ApcUpload[];
   latest: string | null;
   current: ApcCurrent | null;
   nation?: string | null;
@@ -58,8 +59,9 @@ export class ApcService {
     return this.http.get<ApcList>(this.url(aircraftId));
   }
 
-  select(aircraftId: string, attemptId: string) {
-    return this.http.post<ApcCurrent>(`${this.url(aircraftId)}select/${attemptId}`, {}).pipe(
+  select(aircraftId: string, attemptId: string, nation?: string | null) {
+    const fleet = nation ? `${nation}/` : '';
+    return this.http.post<ApcCurrent>(`${this.url(aircraftId)}select/${fleet}${attemptId}`, {}).pipe(
       tap({
         next: () => this.toast.ok('APC assigned to this aircraft'),
         error: () => this.toast.fail('Could not assign this APC'),
@@ -76,8 +78,9 @@ export class ApcService {
     );
   }
 
-  downloadHistory(aircraftId: string, attemptId: string, filename?: string | null) {
-    return this.http.get(`${this.url(aircraftId)}history/${attemptId}/file`, { responseType: 'blob' }).pipe(
+  downloadHistory(aircraftId: string, attemptId: string, filename?: string | null, nation?: string | null) {
+    const fleet = nation ? `${nation}/` : '';
+    return this.http.get(`${this.url(aircraftId)}history/${fleet}${attemptId}/file`, { responseType: 'blob' }).pipe(
       tap({
         next: (blob) => {
           const href = URL.createObjectURL(blob);
