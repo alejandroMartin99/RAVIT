@@ -15,6 +15,16 @@
   margin: 0 0 1.25rem;
 }
 
+.mod > div {
+  min-width: 0;
+}
+
+.mod-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
 .kicker {
   margin: 0;
   color: var(--text-secondary);

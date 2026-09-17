@@ -21,17 +21,6 @@
       "uploaded_at": "2026-09-17T19:57:23.339816+00:00",
       "uploaded_by": "Alejandro Mart\u00edn Iglesias",
       "rows": 14
-    },
-    {
-      "id": "a003",
-      "issue": null,
-      "number": null,
-      "status": "fail",
-      "message": "The sheet has no header row",
-      "source_file": "Con2026-09-01-Detalle-de-movimientos-de-cuenta.xlsx",
-      "uploaded_at": "2026-09-17T21:01:23.404403+00:00",
-      "uploaded_by": "Alejandro Mart\u00edn Iglesias",
-      "rows": 0
     }
   ]
 }

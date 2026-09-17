@@ -6,6 +6,7 @@ import { PdCheckStatus, PdIngestEvent, PdIssue, PdIssueRef, PdRow, PdService } f
 import { AircraftService } from '../../services/aircraft.service';
 import { WorkspaceService } from '../../services/workspace.service';
 import { ModuleIconComponent } from '../../shared/ui/module-icon/module-icon.component';
+import { UiHelpComponent } from '../../shared/ui/help/ui-help.component';
 import { UiButtonComponent } from '../../shared/ui/button/ui-button.component';
 import { UiModalComponent } from '../../shared/ui/modal/ui-modal.component';
 import { UiTableCellDirective } from '../../shared/ui/table/ui-table-cell.directive';
@@ -24,7 +25,7 @@ type TableCol = { id: string; label: string };
 @Component({
   selector: 'app-pd',
   standalone: true,
-  imports: [RouterLink, DatePipe, ModuleIconComponent, UiTableComponent, UiTableCellDirective, UiModalComponent, UiButtonComponent],
+  imports: [RouterLink, DatePipe, ModuleIconComponent, UiTableComponent, UiTableCellDirective, UiModalComponent, UiButtonComponent, UiHelpComponent],
   providers: [DatePipe],
   templateUrl: './pd.page.html',
   styleUrl: './pd.page.scss',
@@ -48,8 +49,9 @@ export class PdPage implements OnInit {
     () => (this.data()['grandLabel'] as string) ?? (this.data()['childLabel'] as string) ?? 'Program Directive (PD)',
   );
   readonly ingest = computed(() => this.data()['pdMode'] === 'ingest');
-  readonly ingestPath = computed(() => ['/aircraft', this.aircraftId, 'r.d.g', 'source-ingestion']);
-  readonly viewPath = computed(() => ['/aircraft', this.aircraftId, 'r.d.p', 'pd']);
+  readonly helpTopic = computed(() => (this.ingest() ? 'pd-ingest' : 'pd-view'));
+  readonly ingestPath = computed(() => ['/aircraft', this.aircraftId, 'r.d.g', 'source-ingestion', 'pd']);
+  readonly viewPath = computed(() => ['/aircraft', this.aircraftId, 'r.d.p', 'plan-data', 'pd']);
   readonly dash = computed(() => this.circ * (1 - this.percent() / 100));
 
   readonly issues = signal<PdIssueRef[]>([]);
@@ -208,10 +210,13 @@ export class PdPage implements OnInit {
     if (!item) {
       return;
     }
-    this.pdApi.deleteHistory(this.aircraftId, item.id).subscribe({
+        this.pdApi.deleteHistory(this.aircraftId, item.id).subscribe({
       next: () => {
         this.pendingDelete.set(null);
-        this.refreshList();
+        if (this.issue()?.issue === item.issue) {
+          this.issue.set(null);
+        }
+        this.refreshList(!this.ingest());
       },
       error: () => this.pendingDelete.set(null),
     });

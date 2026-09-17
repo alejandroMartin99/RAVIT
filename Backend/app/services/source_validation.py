@@ -244,7 +244,7 @@ def _unique_errors(rules: dict, rows: list[dict]) -> list[str]:
     return errors
 
 
-_ISSUE_IN_NAME = re.compile(r"ISSUE\s+(\d{1,2})", re.I)
+_ISSUE_IN_NAME = re.compile(r"ISSUE[\s_\-]*(\d{1,2}|XX)\s*$", re.I)
 
 
 def _header_key(value: str) -> str:
@@ -263,11 +263,21 @@ def _sheet_headers(sheet: Worksheet, rules: dict) -> list[str]:
 
 def _issue_from_last_column(headers: list[str]) -> int:
     last = headers[-1] if headers else ""
-    match = _ISSUE_IN_NAME.search(last)
+    match = _ISSUE_IN_NAME.search(_norm(last))
     if not match:
         found = last or "(empty)"
         raise ValueError(f"Last column must contain Issue XX, found '{found}'")
-    return int(match.group(1))
+    token = match.group(1)
+    if token.upper() == "XX":
+        nums = [
+            int(vid[:2])
+            for name in headers[:-1]
+            if (vid := _version_id(name)) and vid.endswith(".00")
+        ]
+        if not nums:
+            raise ValueError("Last column is Issue XX but no NN.00 column was found")
+        return max(nums)
+    return int(token)
 
 
 def run_check(check_id: str, ctx: Context) -> tuple[bool, str]:
@@ -363,6 +373,11 @@ def to_pd_rows(rows: list[dict], rules: dict) -> tuple[list[str], list[dict]]:
             }
         )
     return versions, parsed
+
+
+def to_named_rows(rows: list[dict], rules: dict) -> list[dict]:
+    ids = [column["id"] for column in rules["columns"]]
+    return [{col: row.get(col) or "" for col in ids} for row in rows]
 
 
 def write_sample_workbook(path: Path, rows: list[dict]) -> None:

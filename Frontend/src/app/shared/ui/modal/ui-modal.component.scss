@@ -17,6 +17,18 @@
   animation: rise 0.28s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+.sheet.is-wide {
+  display: flex;
+  flex-direction: column;
+  width: min(40rem, 100%);
+  max-height: min(44rem, calc(100vh - 2.5rem));
+  overflow: hidden;
+}
+
+.sheet.is-wide .body {
+  overflow: auto;
+}
+
 .head {
   display: flex;
   align-items: center;

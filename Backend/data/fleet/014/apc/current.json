@@ -1,0 +1,30 @@
+{
+  "rows": [
+    {
+      "position_code": "21HA / LH",
+      "pnr": "ABS0638A01",
+      "snr": "001238"
+    },
+    {
+      "position_code": "21HA / RH",
+      "pnr": "NSA5121-10",
+      "snr": "AB44192"
+    },
+    {
+      "position_code": "27VE / CTR",
+      "pnr": "EN3646A61405FN",
+      "snr": "S/N 77421"
+    },
+    {
+      "position_code": "32GB / NLG",
+      "pnr": "D92910000000",
+      "snr": "XK-9082"
+    }
+  ],
+  "source_file": "ok.xlsx",
+  "uploaded_at": "2026-09-17T21:28:05.508404+00:00",
+  "uploaded_by": "Alejandro Mart\u00edn Iglesias",
+  "nation": "SAF",
+  "version": 1,
+  "source_id": "a001"
+}

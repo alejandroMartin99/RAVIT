@@ -1,0 +1,45 @@
+{
+  "source": "apc",
+  "label": "APC",
+  "file": {
+    "extensions": [".xlsx", ".xlsm"],
+    "max_bytes": 10485760
+  },
+  "sheet": {
+    "header_row": 1
+  },
+  "columns": [
+    {
+      "id": "position_code",
+      "header": "POSITION CODE",
+      "aliases": ["Position code", "Position", "FIN", "FIN / POSITION"],
+      "required": true,
+      "allow_empty": false,
+      "unique": true
+    },
+    {
+      "id": "pnr",
+      "header": "PNR",
+      "aliases": ["PN", "P/N", "Part Number"],
+      "required": true,
+      "allow_empty": false
+    },
+    {
+      "id": "snr",
+      "header": "SNR",
+      "aliases": ["SN", "S/N", "Serial Number"],
+      "required": true,
+      "allow_empty": false
+    }
+  ],
+  "checks": [
+    { "id": "source", "label": "Source file received" },
+    { "id": "format", "label": "Excel workbook format" },
+    { "id": "workbook", "label": "Workbook can be opened" },
+    { "id": "headers", "label": "Required columns are present" },
+    { "id": "empty", "label": "Required cells are not empty" },
+    { "id": "values", "label": "Column formats are valid" },
+    { "id": "unique", "label": "Position codes are unique" },
+    { "id": "store", "label": "APC stored in the aircraft folder" }
+  ]
+}

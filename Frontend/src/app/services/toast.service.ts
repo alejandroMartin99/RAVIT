@@ -6,6 +6,7 @@ export interface Toast {
   id: number;
   kind: ToastKind;
   message: string;
+  entered: boolean;
   leaving: boolean;
 }
 
@@ -24,14 +25,19 @@ export class ToastService {
 
   private push(kind: ToastKind, message: string): void {
     const id = ++this.seq;
-    this.items.update((list) => [...list, { id, kind, message, leaving: false }]);
-    window.setTimeout(() => this.beginLeave(id), 2000);
+    this.items.update((list) => [...list, { id, kind, message, entered: false, leaving: false }]);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        this.items.update((list) => list.map((item) => (item.id === id ? { ...item, entered: true } : item)));
+      });
+    });
+    window.setTimeout(() => this.beginLeave(id), 3000);
   }
 
   private beginLeave(id: number): void {
     this.items.update((list) => list.map((item) => (item.id === id ? { ...item, leaving: true } : item)));
     window.setTimeout(() => {
       this.items.update((list) => list.filter((item) => item.id !== id));
-    }, 320);
+    }, 500);
   }
 }

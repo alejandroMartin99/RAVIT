@@ -9,5 +9,6 @@ import { Component, input, output } from '@angular/core';
 export class UiModalComponent {
   readonly open = input(false);
   readonly title = input('');
+  readonly wide = input(false);
   readonly closed = output<void>();
 }

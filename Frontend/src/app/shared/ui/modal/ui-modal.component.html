@@ -2,6 +2,7 @@
   <div class="scrim" (click)="closed.emit()">
     <div
       class="sheet"
+      [class.is-wide]="wide()"
       role="dialog"
       aria-modal="true"
       [attr.aria-label]="title()"

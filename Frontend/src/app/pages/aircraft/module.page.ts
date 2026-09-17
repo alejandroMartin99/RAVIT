@@ -5,11 +5,12 @@ import { SIDE_NAV } from '../../domain/nav/nav.catalog';
 import { AircraftService } from '../../services/aircraft.service';
 import { WorkspaceService } from '../../services/workspace.service';
 import { ModuleIconComponent } from '../../shared/ui/module-icon/module-icon.component';
+import { UiHelpComponent } from '../../shared/ui/help/ui-help.component';
 
 @Component({
   selector: 'app-module',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, ModuleIconComponent],
+  imports: [RouterLink, RouterLinkActive, ModuleIconComponent, UiHelpComponent],
   templateUrl: './module.page.html',
   styleUrl: './module.page.scss',
 })
@@ -28,6 +29,10 @@ export class ModulePage implements OnInit {
   readonly slug = computed(() => (this.data()['slug'] as string) ?? '');
   readonly childLabel = computed(() => (this.data()['childLabel'] as string) ?? null);
   readonly childSlug = computed(() => (this.data()['childSlug'] as string) ?? null);
+  readonly grandLabel = computed(() => (this.data()['grandLabel'] as string) ?? null);
+  readonly helpTopic = computed(
+    () => (this.data()['grandSlug'] as string) || (this.data()['childSlug'] as string) || (this.data()['slug'] as string) || 'module',
+  );
   readonly children = computed(
     () => SIDE_NAV.find((item) => item.slug === this.slug())?.children ?? [],
   );

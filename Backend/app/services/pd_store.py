@@ -284,14 +284,19 @@ def delete_attempt(aircraft_id: str, attempt_id: str) -> dict:
     if not found:
         raise HTTPException(status_code=404, detail="Upload not found")
     kept = [item for item in attempts if item.get("id") != attempt_id]
+    folder = _pd_dir(aircraft.folder)
     uploads = _uploads_dir(aircraft.folder)
-    for path in uploads.glob(f"{attempt_id}.*"):
-        path.unlink(missing_ok=True)
+    paths = list(uploads.glob(f"{attempt_id}.*"))
     issue = found.get("issue")
     if found.get("status") == "ok" and issue:
-        folder = _pd_dir(aircraft.folder)
-        for path in folder.glob(f"{issue}.*"):
-            path.unlink(missing_ok=True)
+        paths.extend(folder.glob(f"{issue}.*"))
+    seen: set[Path] = set()
+    for path in paths:
+        resolved = path.resolve()
+        if resolved in seen:
+            continue
+        seen.add(resolved)
+        path.unlink(missing_ok=True)
     _write_history(aircraft.folder, kept)
     return {"ok": True, "id": attempt_id}
 

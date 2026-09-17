@@ -181,14 +181,10 @@
 }
 
 .block:hover,
-.block.is-on,
 .group .block:hover,
 .sub a:hover,
-.sub a.is-on,
 .sub .sub-link:hover,
-.sub .sub-link.is-on,
-.sub .grand:hover,
-.sub .grand.is-on {
+.sub .grand:hover {
   background: rgba(0, 0, 0, 0.06);
 }
 
@@ -323,14 +319,14 @@
   margin: 0.4rem 0.5rem 0.7rem;
   border: 1px solid var(--hairline);
   border-radius: 12px;
-  background: #f3f3f5;
+  background: #fff;
   overflow: hidden;
 }
 
 .nest-block.is-open > .sub-link {
   border-bottom: 1px solid var(--hairline);
   background: #fff;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .nest-block.is-open > .sub-link.is-on {
@@ -339,8 +335,8 @@
 
 .sub .grand {
   padding: 0.62rem 0.85rem 0.62rem 3.15rem;
-  color: #3a3a3c;
-  font-size: 0.8rem;
+  color: #111;
+  font-size: 0.86rem;
   font-weight: 500;
 }
 
@@ -369,7 +365,9 @@
   border-top: 0;
 }
 
-.sub a.is-on {
+.sub a.is-on,
+.sub .sub-link.is-on,
+.sub .grand.is-on {
   font-weight: 600;
 }
 

@@ -1,3 +1,4 @@
+export { UiHelpComponent } from './help/ui-help.component';
 export { UiButtonComponent } from './button/ui-button.component';
 export { FlagIconComponent } from './flag-icon/flag-icon.component';
 export { UiModalComponent } from './modal/ui-modal.component';

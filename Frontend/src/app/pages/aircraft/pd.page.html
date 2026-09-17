@@ -3,7 +3,10 @@
     <app-module-icon [name]="icon()" />
     <div>
       <p class="kicker">{{ code() }}</p>
-      <h1>{{ title() }}</h1>
+      <div class="mod-title">
+        <h1>{{ title() }}</h1>
+        <app-ui-help [topic]="helpTopic()" />
+      </div>
     </div>
   </header>
 

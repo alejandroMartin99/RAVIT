@@ -3,11 +3,20 @@
     <app-module-icon [name]="icon()" />
     <div>
       <p class="kicker">{{ code() }}</p>
-      <h1>{{ label() }}</h1>
+      <div class="mod-title">
+        <h1>{{ label() }}</h1>
+        <app-ui-help [topic]="helpTopic()" />
+      </div>
     </div>
   </header>
 
-  @if (nested().length) {
+  @if (grandLabel()) {
+    <article class="panel">
+      <p class="step">Current step</p>
+      <h2>{{ grandLabel() }}</h2>
+      <p class="hint">This block will open here. Content comes next.</p>
+    </article>
+  } @else if (nested().length) {
     <div class="steps">
       @for (item of nested(); track item.id) {
         <a

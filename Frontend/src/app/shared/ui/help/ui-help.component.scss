@@ -1,0 +1,59 @@
+:host {
+  display: block;
+  flex: 0 0 auto;
+}
+
+.ask {
+  display: grid;
+  place-items: center;
+  width: 2.15rem;
+  height: 2.15rem;
+  border: 1.5px solid var(--hairline);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-secondary);
+  font: 700 1.05rem/1 inherit;
+  cursor: pointer;
+}
+
+.ask:hover {
+  border-color: var(--text-secondary);
+  color: var(--text);
+  background: #fff;
+}
+
+.lead {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.block {
+  display: grid;
+  gap: 0.4rem;
+}
+
+h3 {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.block p,
+.block li {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+ul {
+  margin: 0;
+  padding: 0 0 0 1.05rem;
+  display: grid;
+  gap: 0.28rem;
+}

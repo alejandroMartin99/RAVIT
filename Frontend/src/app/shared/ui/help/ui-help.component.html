@@ -1,0 +1,22 @@
+<button type="button" class="ask" aria-label="About this tab" data-tip="About this tab" (click)="toggle($event)">
+  <span aria-hidden="true">?</span>
+</button>
+
+<app-ui-modal [open]="open()" [title]="guide().title" [wide]="true" (closed)="close()">
+  <p class="lead">{{ guide().summary }}</p>
+  @for (section of guide().sections; track section.heading) {
+    <section class="block">
+      <h3>{{ section.heading }}</h3>
+      @if (section.body) {
+        <p>{{ section.body }}</p>
+      }
+      @if (section.items?.length) {
+        <ul>
+          @for (item of section.items; track item) {
+            <li>{{ item }}</li>
+          }
+        </ul>
+      }
+    </section>
+  }
+</app-ui-modal>

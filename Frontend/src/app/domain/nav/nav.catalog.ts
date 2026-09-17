@@ -45,6 +45,7 @@ export const SIDE_NAV: SideNavItem[] = [
       'Build the aircraft reference dataset: ingest source files, map them to the A400M model, run quality checks and generate the event baseline.',
     children: [
       { id: 'rdg-ingest', label: 'Source ingestion', slug: 'source-ingestion', icon: 'ingest', children: [
+          { id: 'rdg-ingest-apc', label: 'APC', slug: 'apc', icon: 'apc' },
           { id: 'rdg-ingest-pd', label: 'Program Directive (PD)', slug: 'pd', icon: 'pd' },
         ] },
       { id: 'rdg-map', label: 'Data mapping', slug: 'data-mapping', icon: 'mapping' },
@@ -62,10 +63,15 @@ export const SIDE_NAV: SideNavItem[] = [
     description:
       'Turn approved reference data into production packages, control outputs and prepare delivery for the selected MSN.',
     children: [
-      { id: 'rdp-pd', label: 'Program Directive (PD)', slug: 'pd', icon: 'pd' },
-      { id: 'rdp-wo', label: 'Work Order (WO)', slug: 'wo', icon: 'wo' },
-      { id: 'rdp-ri', label: 'Remove and Installation (RI)', slug: 'ri', icon: 'ri' },
-      { id: 'rdp-sw', label: 'Software (SW)', slug: 'sw', icon: 'sw' },
+      { id: 'rdp-plan', label: 'Plan data', slug: 'plan-data', icon: 'plan', children: [
+          { id: 'rdp-plan-pd', label: 'Program Directive (PD)', slug: 'pd', icon: 'pd' },
+          { id: 'rdp-plan-apc', label: 'APC', slug: 'apc', icon: 'apc' },
+        ] },
+      { id: 'rdp-mro', label: 'MRO', slug: 'mro', icon: 'mro', children: [
+          { id: 'rdp-mro-wo', label: 'Work Order (WO)', slug: 'wo', icon: 'wo' },
+          { id: 'rdp-mro-ri', label: 'Removals and Inspection', slug: 'ri', icon: 'ri' },
+          { id: 'rdp-mro-sw', label: 'Software (SW)', slug: 'sw', icon: 'sw' },
+        ] },
     ],
   },
   {
