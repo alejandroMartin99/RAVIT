@@ -13,7 +13,7 @@
 .bar {
   position: sticky;
   top: 0;
-  z-index: 8;
+  z-index: 9;
   display: flex;
   align-items: center;
   gap: 0.85rem;
@@ -96,15 +96,40 @@
   top: var(--bar-h);
   bottom: 0;
   left: 0;
-  z-index: 6;
+  z-index: 8;
   width: min(26.5rem, 92vw);
   padding: 1.15rem 1rem;
   overflow: auto;
   background: #fff;
   color: #111;
-  box-shadow: var(--shadow-float);
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.12);
   transform: translateX(-105%);
   transition: transform 0.22s ease;
+}
+
+.scrim {
+  position: fixed;
+  top: var(--bar-h);
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 7;
+  border: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.28) 0%,
+    rgba(0, 0, 0, 0.48) 42%,
+    rgba(0, 0, 0, 0.62) 100%
+  );
+  opacity: 0;
+  pointer-events: none;
+  cursor: pointer;
+  transition: opacity 0.22s ease;
+}
+
+.scrim.is-open {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .drawer.is-open {

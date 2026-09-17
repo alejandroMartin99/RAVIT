@@ -1,5 +1,5 @@
 <div class="shell">
-  <header class="bar">
+  <header class="bar" (click)="onBarClick($event)">
     <button
       type="button"
       class="burger"
@@ -33,6 +33,14 @@
   </header>
 
   <div class="body">
+    <button
+      type="button"
+      class="scrim"
+      [class.is-open]="sidebarOpen()"
+      [attr.aria-hidden]="!sidebarOpen()"
+      tabindex="-1"
+      (click)="closeSidebar()"
+    ></button>
     <aside class="drawer" [class.is-open]="sidebarOpen()" aria-label="Main menu">
       <p class="drawer-title">Menu</p>
       <nav>
@@ -110,6 +118,7 @@
               [routerLink]="pathFor(item)"
               routerLinkActive="is-on"
               [routerLinkActiveOptions]="{ exact: !item.slug }"
+              (click)="closeSidebar()"
             >
               <app-module-icon [name]="item.icon" />
               <span class="copy">

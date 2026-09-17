@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, computed, effect, HostListener, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter, map, startWith } from 'rxjs';
@@ -41,6 +41,7 @@ export class AppShellComponent {
         this.url();
         this.expandedId.set(null);
         this.nestedOpenId.set(null);
+        this.sidebarOpen.set(false);
       },
       { allowSignalWrites: true },
     );
@@ -145,6 +146,24 @@ export class AppShellComponent {
   toggleSidebar(event: Event): void {
     event.stopPropagation();
     this.sidebarOpen.update((open) => !open);
+  }
+
+  onBarClick(event: Event): void {
+    if (!this.sidebarOpen()) {
+      return;
+    }
+    const target = event.target as HTMLElement;
+    if (target.closest('.burger')) {
+      return;
+    }
+    this.closeSidebar();
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.sidebarOpen()) {
+      this.closeSidebar();
+    }
   }
 
   closeSidebar(): void {
