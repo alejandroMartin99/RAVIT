@@ -44,9 +44,11 @@
                 class="block"
                 [class.is-off]="!canOpen(item)"
                 [class.is-open]="isExpanded(item)"
-                [disabled]="!canOpen(item)"
-                [attr.title]="canOpen(item) ? null : 'Select an aircraft first'"
+                [attr.aria-disabled]="!canOpen(item)"
                 (click)="toggleGroup(item, $event)"
+                (mouseenter)="onLockMove($event, item)"
+                (mousemove)="onLockMove($event, item)"
+                (mouseleave)="onLockLeave()"
               >
                 <app-module-icon [name]="item.icon" />
                 <span class="copy">
@@ -55,18 +57,50 @@
                 </span>
                 <span class="chev" aria-hidden="true"></span>
               </button>
-              @if (canOpen(item) && isExpanded(item) && item.children?.length) {
-                <div class="sub">
-                  @for (child of item.children; track child.id) {
-                    <a
-                      [routerLink]="childPath(item, child)"
-                      routerLinkActive="is-on"
-                      (click)="closeSidebar()"
-                    >
-                      <app-module-icon [name]="child.icon" />
-                      <span>{{ child.label }}</span>
-                    </a>
-                  }
+              @if (item.children?.length) {
+                <div class="sub" [class.is-open]="canOpen(item) && isExpanded(item)">
+                  <div class="sub-inner">
+                    @for (child of item.children; track child.id) {
+                      @if (child.children?.length) {
+                        <div class="nest-block" [class.is-open]="isNestedOpen(child)">
+                          <button
+                            type="button"
+                            class="sub-link"
+                            [class.is-on]="isNestedOpen(child)"
+                            (click)="toggleNested(child, $event)"
+                          >
+                            <app-module-icon [name]="child.icon" />
+                            <span>{{ child.label }}</span>
+                            <span class="chev" [class.is-down]="isNestedOpen(child)" aria-hidden="true"></span>
+                          </button>
+                          <div class="sub nest" [class.is-open]="isNestedOpen(child)">
+                            <div class="sub-inner">
+                              @for (grand of child.children; track grand.id) {
+                                <a
+                                  class="grand"
+                                  [routerLink]="grandPath(item, child, grand)"
+                                  routerLinkActive="is-on"
+                                  (click)="closeSidebar()"
+                                >
+                                  <app-module-icon [name]="grand.icon" />
+                                  <span>{{ grand.label }}</span>
+                                </a>
+                              }
+                            </div>
+                          </div>
+                        </div>
+                      } @else {
+                        <a
+                          [routerLink]="childPath(item, child)"
+                          routerLinkActive="is-on"
+                          (click)="closeSidebar()"
+                        >
+                          <app-module-icon [name]="child.icon" />
+                          <span>{{ child.label }}</span>
+                        </a>
+                      }
+                    }
+                  </div>
                 </div>
               }
             </div>
@@ -84,7 +118,12 @@
               </span>
             </a>
           } @else {
-            <span class="block is-off" title="Select an aircraft first">
+            <span
+              class="block is-off"
+              (mouseenter)="onLockMove($event, item)"
+              (mousemove)="onLockMove($event, item)"
+              (mouseleave)="onLockLeave()"
+            >
               <app-module-icon [name]="item.icon" />
               <span class="copy">
                 <span class="code">{{ item.code }}</span>
@@ -101,3 +140,10 @@
     </main>
   </div>
 </div>
+
+@if (lockTip(); as tip) {
+  <div class="lock-tip" [style.left.px]="tip.x" [style.top.px]="tip.y">
+    <span class="ban" aria-hidden="true"></span>
+    Select an aircraft first
+  </div>
+}

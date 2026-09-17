@@ -1,0 +1,8 @@
+<div class="host" aria-live="polite" aria-relevant="additions">
+  @for (toast of toasts(); track toast.id) {
+    <aside class="toast" [class.is-ok]="toast.kind === 'ok'" [class.is-fail]="toast.kind === 'fail'" [class.is-out]="toast.leaving">
+      <span class="dot" aria-hidden="true"></span>
+      <p>{{ toast.message }}</p>
+    </aside>
+  }
+</div>

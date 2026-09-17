@@ -97,51 +97,6 @@ app-ui-button {
   font-size: 0.9rem;
 }
 
-.fleet {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.fleet thead {
-  position: relative;
-  z-index: 2;
-}
-
-.fleet th {
-  position: relative;
-  padding: 0.45rem 0.55rem 0.65rem;
-  overflow: visible;
-  border-bottom: 1px solid var(--hairline);
-  color: #3a3a3c;
-  font-size: 0.82rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-align: left;
-  text-transform: uppercase;
-  vertical-align: middle;
-}
-
-.fleet td {
-  padding: 0.75rem 0.55rem;
-  border-bottom: 1px solid var(--hairline);
-  font-size: 0.92rem;
-  vertical-align: middle;
-}
-
-.fleet tbody tr {
-  cursor: pointer;
-  transition: background 0.16s ease;
-}
-
-.fleet tbody tr:hover,
-.fleet tbody tr:focus-visible {
-  background: var(--fill);
-}
-
-.fleet tbody tr.is-selected {
-  background: var(--accent-soft);
-}
-
 .msn {
   font-size: 1.05rem;
   font-weight: 600;

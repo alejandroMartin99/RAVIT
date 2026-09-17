@@ -8,6 +8,7 @@ export interface SideNavChild {
   label: string;
   slug: string;
   icon: string;
+  children?: SideNavChild[];
 }
 
 export interface SideNavItem {
@@ -39,11 +40,13 @@ export const SIDE_NAV: SideNavItem[] = [
     label: 'Reference Data Generation',
     icon: 'rdg',
     requiresAircraft: true,
-    slug: 'rdg',
+    slug: 'r.d.g',
     description:
       'Build the aircraft reference dataset: ingest source files, map them to the A400M model, run quality checks and generate the event baseline.',
     children: [
-      { id: 'rdg-ingest', label: 'Source ingestion', slug: 'source-ingestion', icon: 'ingest' },
+      { id: 'rdg-ingest', label: 'Source ingestion', slug: 'source-ingestion', icon: 'ingest', children: [
+          { id: 'rdg-ingest-pd', label: 'Program Directive (PD)', slug: 'pd', icon: 'pd' },
+        ] },
       { id: 'rdg-map', label: 'Data mapping', slug: 'data-mapping', icon: 'mapping' },
       { id: 'rdg-quality', label: 'Quality checks', slug: 'quality-checks', icon: 'quality' },
       { id: 'rdg-generate', label: 'Dataset generation', slug: 'dataset-generation', icon: 'generate' },
@@ -51,24 +54,29 @@ export const SIDE_NAV: SideNavItem[] = [
   },
   {
     id: 'rdp',
-    code: 'RDP',
+    code: 'R.D.P.',
     label: 'Reference Data Production',
     icon: 'rdp',
     requiresAircraft: true,
-    slug: 'rdp',
+    slug: 'r.d.p',
     description:
       'Turn approved reference data into production packages, control outputs and prepare delivery for the selected MSN.',
-    children: [],
+    children: [
+      { id: 'rdp-pd', label: 'Program Directive (PD)', slug: 'pd', icon: 'pd' },
+      { id: 'rdp-wo', label: 'Work Order (WO)', slug: 'wo', icon: 'wo' },
+      { id: 'rdp-ri', label: 'Remove and Installation (RI)', slug: 'ri', icon: 'ri' },
+      { id: 'rdp-sw', label: 'Software (SW)', slug: 'sw', icon: 'sw' },
+    ],
   },
   {
     id: 'ra',
-    code: 'R.A.',
-    label: 'Reference Application',
+    code: 'R.D.A.',
+    label: 'Reference Data Application',
     icon: 'ra',
     requiresAircraft: true,
-    slug: 'ra',
+    slug: 'r.d.a',
     description:
-      'Work with the live reference application for this aircraft: consult, compare and apply the generated data in the event workspace.',
+      'Work with the live reference data application for this aircraft: consult, compare and apply the generated data in the event workspace.',
   },
 ];
 

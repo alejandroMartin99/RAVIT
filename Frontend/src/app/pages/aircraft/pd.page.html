@@ -1,0 +1,206 @@
+<section class="wrap" (click)="closeIssues()">
+  <header class="mod">
+    <app-module-icon [name]="icon()" />
+    <div>
+      <p class="kicker">{{ code() }}</p>
+      <h1>{{ title() }}</h1>
+    </div>
+  </header>
+
+  @if (error(); as message) {
+    <p class="banner">{{ message }}</p>
+  }
+
+  @if (ingest()) {
+    <input
+      #picker
+      class="visually-hidden"
+      type="file"
+      accept=".xlsx,.xlsm"
+      (change)="onPick($event)"
+    />
+  }
+
+  @if (ingest() && (uploading() || steps().length)) {
+    <article class="ingest">
+      <div class="meter">
+        <svg class="ring" viewBox="0 0 120 120" aria-hidden="true">
+          <circle class="track" cx="60" cy="60" r="52" />
+          <circle
+            class="bar"
+            [class.is-done]="percent() === 100 && !error()"
+            [class.is-fail]="!!error()"
+            cx="60"
+            cy="60"
+            r="52"
+            [attr.stroke-dasharray]="circ"
+            [attr.stroke-dashoffset]="dash()"
+          />
+        </svg>
+        <p class="pct">{{ percent() }}%</p>
+      </div>
+      <div class="checks">
+        <p class="step">Validating{{ fileName() ? ' · ' + fileName() : '' }}</p>
+        <ul>
+          @for (item of steps(); track item.id) {
+            <li
+              [class.st-pending]="item.status === 'pending'"
+              [class.st-running]="item.status === 'running'"
+              [class.st-ok]="item.status === 'ok'"
+              [class.st-fail]="item.status === 'fail'"
+            >
+              <span class="mark" aria-hidden="true"></span>
+              <span>{{ item.label }}</span>
+            </li>
+          }
+        </ul>
+      </div>
+    </article>
+  }
+
+  @if (ingest()) {
+    @if (history().length && !uploading()) {
+      <div class="toolbar">
+        <p class="hint tight">History of every PD upload for this aircraft. Failed files stay listed. The last successful issue is current.</p>
+        <button type="button" class="go" (click)="openPicker()">Upload next issue</button>
+      </div>
+      <app-ui-table
+        [columns]="histCols()"
+        [rows]="history()"
+        initialSort="uploaded"
+        initialDir="desc"
+        [trackBy]="trackHistory"
+        [rowClass]="historyRowClass"
+      >
+        <ng-template uiTableCell="note" let-item>
+          @if (item.current) {
+            <span class="tag">Current</span>
+          }
+          @if (item.status === 'fail' && item.message) {
+            <span class="fail-msg">{{ item.message }}</span>
+          }
+        </ng-template>
+        <ng-template uiTableCell="actions" let-item>
+          <div class="acts">
+            @if (item.status === 'ok' && item.issue) {
+              <a
+                class="icon-act"
+                [routerLink]="viewPath()"
+                [queryParams]="{ issue: item.issue }"
+                aria-label="View in production"
+                (click)="$event.stopPropagation()"
+              >
+                <svg viewBox="0 0 16 16" aria-hidden="true">
+                  <path d="M8 3.2C3.6 3.2 1.2 8 1.2 8s2.4 4.8 6.8 4.8S14.8 8 14.8 8 12.4 3.2 8 3.2zm0 8A3.2 3.2 0 1 1 8 4.8a3.2 3.2 0 0 1 0 6.4zm0-1.6A1.6 1.6 0 1 0 8 6.4a1.6 1.6 0 0 0 0 3.2z" fill="currentColor"/>
+                </svg>
+              </a>
+            }
+            <button type="button" class="icon-act" aria-label="Download file" (click)="download(item, $event)">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path d="M8 1.5a.75.75 0 0 1 .75.75v6.19l1.97-1.97a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 7.53a.75.75 0 0 1 1.06-1.06l1.97 1.97V2.25A.75.75 0 0 1 8 1.5zM3 12.25A.75.75 0 0 1 3.75 11.5h8.5a.75.75 0 0 1 0 1.5h-8.5A.75.75 0 0 1 3 12.25z" fill="currentColor"/>
+              </svg>
+            </button>
+            <button type="button" class="icon-del" aria-label="Delete upload" (click)="askDelete(item, $event)">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path d="M5.5 2h5l.5 1.2H14v1.3H2V3.2h3l.5-1.2zm.7 4.2.3 6.2h1.4l-.3-6.2H6.2zm3.4 0h-1.4l.3 6.2h1.4l-.3-6.2z" fill="currentColor"/>
+              </svg>
+            </button>
+          </div>
+        </ng-template>
+      </app-ui-table>
+    } @else if (!loading() && !uploading() && !steps().length) {
+      <article class="empty">
+        <p class="step">No Program Directive loaded</p>
+        <h2>Upload a PD source for this aircraft</h2>
+        <p class="hint">Excel files are validated in the backend. The last successful upload becomes current.</p>
+        <button type="button" class="go" (click)="openPicker()">Upload a PD</button>
+      </article>
+    }
+  } @else {
+    @if (issues().length) {
+    <div class="toolbar">
+      <div class="pick" [class.is-open]="issueOpen()" (click)="$event.stopPropagation()">
+        <button type="button" class="pick-btn" (click)="toggleIssues()">
+          <span>
+            <span class="pick-kicker">Issue</span>
+            <span class="pick-val">{{ issueLabel(selected()) }}</span>
+          </span>
+          <span class="pick-chev" aria-hidden="true"></span>
+        </button>
+        @if (issueOpen()) {
+          <ul class="pick-list">
+            @for (item of issues(); track item.id) {
+              <li>
+                <button type="button" [class.is-on]="item.issue === selected()" (click)="selectIssue(item.issue || item.id)">
+                    <span>{{ issueLabel(item) }}</span>
+                  @if (item.current) {
+                    <span class="tag">Current</span>
+                  }
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+    </div>
+    }
+    @if (loading()) {
+    <div class="sheet is-skel" aria-busy="true" aria-live="polite">
+      <table class="grid">
+        <thead>
+          <tr>
+            @for (col of skelCols(); track col.id) {
+              <th [class.flag-col]="col.id.startsWith('flag:')">
+                <span class="skel skel-head">{{ col.label }}</span>
+              </th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of skelRows; track row; let r = $index) {
+            <tr>
+              @for (col of skelCols(); track col.id; let c = $index) {
+                <td [class.flag-col]="col.id.startsWith('flag:')">
+                  <span
+                    class="skel"
+                    [class.skel-chip]="col.id.startsWith('flag:')"
+                    [class.skel-lg]="col.id === 'description' || col.id === 'source_material'"
+                    [class.skel-sm]="col.id === 'revision' || col.id === 'ata' || col.id === 'source_hours' || col.id === 'pn' || col.id === 'sn'"
+                    [style.animation-delay]="r * 45 + c * 22 + 'ms'"
+                  ></span>
+                </td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    } @else {
+      @if (issue(); as pd) {
+    <app-ui-table [columns]="pdCols()" [rows]="pd.rows" [trackBy]="trackRow" />
+      } @else {
+    <article class="empty">
+      <p class="step">No Program Directive loaded</p>
+      <h2>Upload a PD source for this aircraft</h2>
+      <p class="hint">Production shows the current issue. Upload starts in R.D.G. Source ingestion.</p>
+      <a class="go" [routerLink]="ingestPath()">Upload a PD</a>
+    </article>
+    }
+  }
+  }
+</section>
+
+@if (pendingDelete(); as item) {
+  <app-ui-modal [open]="true" title="Remove upload" (closed)="closeDelete()">
+    <p class="hint">This removes the upload from history. It cannot be undone.</p>
+    @if (item.status === 'fail') {
+      <p class="hint tight">The failed file will leave no trace in this list.</p>
+    } @else {
+      <p class="hint tight">{{ issueLabel(item) }} and its PD data will also be removed.</p>
+    }
+    <div class="actions">
+      <app-ui-button variant="ghost" (click)="closeDelete()">Cancel</app-ui-button>
+      <button type="button" class="go danger" (click)="confirmDelete()">Delete</button>
+    </div>
+  </app-ui-modal>
+}

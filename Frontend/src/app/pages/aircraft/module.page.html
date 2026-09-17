@@ -7,10 +7,23 @@
     </div>
   </header>
 
-  @if (childLabel(); as child) {
+  @if (nested().length) {
+    <div class="steps">
+      @for (item of nested(); track item.id) {
+        <a
+          class="step-tile"
+          [routerLink]="['/aircraft', aircraftId, slug(), childSlug(), item.slug]"
+          routerLinkActive="is-on"
+        >
+          <app-module-icon [name]="item.icon" />
+          <span class="step-name">{{ item.label }}</span>
+        </a>
+      }
+    </div>
+  } @else if (childLabel()) {
     <article class="panel">
       <p class="step">Current step</p>
-      <h2>{{ child }}</h2>
+      <h2>{{ childLabel() }}</h2>
       <p class="hint">This block will open here. Content comes next.</p>
     </article>
   } @else if (children().length) {

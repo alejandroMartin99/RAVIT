@@ -1,5 +1,5 @@
 <div class="head">
-  <button type="button" class="sort" (click)="sorted.emit()">
+  <button type="button" class="sort" (click)="$event.stopPropagation(); sorted.emit()">
     <span>{{ label() }}</span>
     <span class="arrow" [class.desc]="sortDir() === 'desc'" [class.on]="!!sortDir()">
       <svg viewBox="0 0 12 12" aria-hidden="true">

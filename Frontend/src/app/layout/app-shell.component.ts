@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter, map, startWith } from 'rxjs';
@@ -22,7 +22,9 @@ export class AppShellComponent {
   readonly sideNav = SIDE_NAV;
   readonly sidebarOpen = signal(false);
   readonly aircraft = this.workspace.aircraft;
-  private readonly toggled = signal<Record<string, boolean>>({});
+  readonly lockTip = signal<{ x: number; y: number } | null>(null);
+  private readonly expandedId = signal<string | null>(null);
+  private readonly nestedOpenId = signal<string | null>(null);
 
   private readonly url = toSignal(
     this.router.events.pipe(
@@ -32,6 +34,17 @@ export class AppShellComponent {
     ),
     { initialValue: this.router.url },
   );
+
+  constructor() {
+    effect(
+      () => {
+        this.url();
+        this.expandedId.set(null);
+        this.nestedOpenId.set(null);
+      },
+      { allowSignalWrites: true },
+    );
+  }
 
   readonly msnTitle = computed(() => {
     const aircraft = this.aircraft();
@@ -56,6 +69,10 @@ export class AppShellComponent {
     const child = item.children?.find((entry) => entry.slug === childSlug);
     if (child) {
       parts.push(child.label);
+      const grand = child.children?.find((entry) => entry.slug === segments[4]);
+      if (grand) {
+        parts.push(grand.label);
+      }
     }
     return parts;
   });
@@ -73,6 +90,29 @@ export class AppShellComponent {
     return aircraft ? `/aircraft/${aircraft.id}/${item.slug}/${child.slug}` : '/';
   }
 
+  grandPath(item: SideNavItem, child: SideNavChild, grand: SideNavChild): string {
+    const aircraft = this.aircraft();
+    return aircraft ? `/aircraft/${aircraft.id}/${item.slug}/${child.slug}/${grand.slug}` : '/';
+  }
+
+  isNestedOpen(child: SideNavChild): boolean {
+    const open = this.nestedOpenId();
+    if (open === '') {
+      return false;
+    }
+    if (open !== null) {
+      return open === child.id;
+    }
+    const segments = (this.url() ?? '').split('?')[0].split('/').filter(Boolean);
+    return segments[3] === child.slug;
+  }
+
+  toggleNested(child: SideNavChild, event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.nestedOpenId.set(this.isNestedOpen(child) ? '' : child.id);
+  }
+
   canOpen(item: SideNavItem): boolean {
     return !item.requiresAircraft || !!this.aircraft();
   }
@@ -82,12 +122,15 @@ export class AppShellComponent {
   }
 
   isExpanded(item: SideNavItem): boolean {
-    const manual = this.toggled()[item.id];
-    if (manual !== undefined) {
-      return manual;
+    const open = this.expandedId();
+    if (open === '') {
+      return false;
     }
-    const url = this.url() ?? '';
-    return !!item.slug && url.includes(`/${item.slug}`);
+    if (open !== null) {
+      return open === item.id;
+    }
+    const slug = (this.url() ?? '').split('?')[0].split('/').filter(Boolean)[2];
+    return !!item.slug && slug === item.slug;
   }
 
   toggleGroup(item: SideNavItem, event: Event): void {
@@ -96,8 +139,7 @@ export class AppShellComponent {
     if (!this.canOpen(item)) {
       return;
     }
-    const next = !this.isExpanded(item);
-    this.toggled.update((state) => ({ ...state, [item.id]: next }));
+    this.expandedId.set(this.isExpanded(item) ? '' : item.id);
   }
 
   toggleSidebar(event: Event): void {
@@ -107,5 +149,18 @@ export class AppShellComponent {
 
   closeSidebar(): void {
     this.sidebarOpen.set(false);
+    this.lockTip.set(null);
+  }
+
+  onLockMove(event: MouseEvent, item: SideNavItem): void {
+    if (this.canOpen(item)) {
+      this.lockTip.set(null);
+      return;
+    }
+    this.lockTip.set({ x: event.clientX + 14, y: event.clientY + 16 });
+  }
+
+  onLockLeave(): void {
+    this.lockTip.set(null);
   }
 }

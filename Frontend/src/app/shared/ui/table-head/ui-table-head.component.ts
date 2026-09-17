@@ -1,4 +1,4 @@
-import { Component, computed, input, model, output, signal } from '@angular/core';
+import { Component, ElementRef, computed, effect, inject, input, model, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 @Component({
@@ -9,6 +9,8 @@ import { FormsModule } from '@angular/forms';
   styleUrl: './ui-table-head.component.scss',
 })
 export class UiTableHeadComponent {
+  private readonly host = inject(ElementRef<HTMLElement>);
+
   readonly label = input.required<string>();
   readonly options = input<string[]>([]);
   readonly sortDir = input<'asc' | 'desc' | null>(null);
@@ -27,6 +29,15 @@ export class UiTableHeadComponent {
   });
 
   readonly filtered = computed(() => this.selected() !== null);
+
+  constructor() {
+    effect(() => {
+      if (!this.open()) {
+        return;
+      }
+      queueMicrotask(() => this.placePanel());
+    });
+  }
 
   isOn(value: string): boolean {
     const chosen = this.selected();
@@ -49,5 +60,20 @@ export class UiTableHeadComponent {
 
   clear(): void {
     this.selected.set([]);
+  }
+
+  private placePanel(): void {
+    const funnel = this.host.nativeElement.querySelector('.funnel') as HTMLElement | null;
+    if (!funnel) {
+      return;
+    }
+    const box = funnel.getBoundingClientRect();
+    const width = 216;
+    let left = box.left;
+    if (box.left + width > window.innerWidth - 8) {
+      left = box.right - width;
+    }
+    this.host.nativeElement.style.setProperty('--funnel-x', `${Math.max(8, left)}px`);
+    this.host.nativeElement.style.setProperty('--funnel-y', `${box.bottom + 6}px`);
   }
 }

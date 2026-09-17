@@ -1,0 +1,137 @@
+:host {
+  display: block;
+}
+
+.sheet {
+  overflow: auto;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+.sheet.is-bare {
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.sheet.filter-open {
+  overflow: visible;
+}
+
+.grid {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.grid thead {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+}
+
+.grid th,
+.grid td {
+  padding: 0.7rem 0.85rem;
+  border-bottom: 1px solid var(--hairline);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.grid th {
+  position: relative;
+  z-index: 3;
+  overflow: visible;
+  min-width: 8.5rem;
+  background: var(--surface);
+  color: #3a3a3c;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.grid td {
+  font-size: 0.9rem;
+}
+
+.grid tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.grid tbody tr.is-click {
+  cursor: pointer;
+  transition: background 0.16s ease;
+}
+
+.grid tbody tr.is-click:hover,
+.grid tbody tr.is-click:focus-visible {
+  background: var(--fill);
+}
+
+.grid tbody tr.is-current {
+  background: var(--accent-soft);
+}
+
+.grid tbody tr.is-fail {
+  background: rgba(196, 30, 58, 0.04);
+}
+
+.empty {
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.act-col {
+  width: 7.2rem;
+  min-width: 7.2rem;
+  text-align: center;
+}
+
+.flag-col {
+  text-align: center;
+  min-width: 8rem;
+}
+
+.flag {
+  display: inline-flex;
+  min-width: 3.1rem;
+  justify-content: center;
+  padding: 0.18rem 0.5rem;
+  border-radius: 980px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.flag.is-y {
+  background: #d8f3e3;
+  color: #0f7b3a;
+}
+
+.flag.is-out {
+  background: #ececec;
+  color: #6e6e73;
+}
+
+.flag.is-fail {
+  background: #f8d7da;
+  color: #c41e3a;
+}
+
+.ref {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+.rev {
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}

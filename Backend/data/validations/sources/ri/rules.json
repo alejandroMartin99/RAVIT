@@ -1,0 +1,7 @@
+{
+  "source": "ri",
+  "label": "Remove and Installation",
+  "file": { "extensions": [".xlsx", ".xlsm"] },
+  "columns": [],
+  "checks": []
+}

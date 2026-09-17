@@ -25,118 +25,27 @@
     } @else if (loading()) {
       <p class="muted">Loading fleet…</p>
     } @else {
-      <table class="fleet">
-        <thead>
-          <tr>
-            <th>
-              <app-ui-table-head
-                label="Aircraft"
-                [options]="aircraftOptions()"
-                [sortDir]="sortDirOf('aircraft')"
-                [open]="openFilter() === 'aircraft'"
-                [selected]="filterAircraft()"
-                (selectedChange)="filterAircraft.set($event)"
-                (sorted)="toggleSort('aircraft')"
-                (menuToggled)="toggleFilter('aircraft', $event)"
-              />
-            </th>
-            <th>
-              <app-ui-table-head
-                label="Air force"
-                [options]="airforceOptions()"
-                [sortDir]="sortDirOf('airforce')"
-                [open]="openFilter() === 'airforce'"
-                [selected]="filterAirforce()"
-                (selectedChange)="filterAirforce.set($event)"
-                (sorted)="toggleSort('airforce')"
-                (menuToggled)="toggleFilter('airforce', $event)"
-              />
-            </th>
-            <th>
-              <app-ui-table-head
-                label="Aircraft chief"
-                [options]="chiefOptions()"
-                [sortDir]="sortDirOf('chief')"
-                [open]="openFilter() === 'chief'"
-                [selected]="filterChief()"
-                (selectedChange)="filterChief.set($event)"
-                (sorted)="toggleSort('chief')"
-                (menuToggled)="toggleFilter('chief', $event)"
-              />
-            </th>
-            <th>
-              <app-ui-table-head
-                label="Type of maintenance"
-                [options]="maintenanceOptions()"
-                [sortDir]="sortDirOf('maintenance')"
-                [open]="openFilter() === 'maintenance'"
-                [selected]="filterMaintenance()"
-                (selectedChange)="filterMaintenance.set($event)"
-                (sorted)="toggleSort('maintenance')"
-                (menuToggled)="toggleFilter('maintenance', $event)"
-              />
-            </th>
-            <th>
-              <app-ui-table-head
-                label="Retrofit event"
-                [options]="retrofitOptions()"
-                [sortDir]="sortDirOf('retrofit')"
-                [open]="openFilter() === 'retrofit'"
-                [selected]="filterRetrofit()"
-                (selectedChange)="filterRetrofit.set($event)"
-                (sorted)="toggleSort('retrofit')"
-                (menuToggled)="toggleFilter('retrofit', $event)"
-              />
-            </th>
-            <th>
-              <app-ui-table-head
-                label="Hang Over (HO)"
-                [options]="hoOptions()"
-                [sortDir]="sortDirOf('ho')"
-                [open]="openFilter() === 'ho'"
-                [selected]="filterHo()"
-                (selectedChange)="filterHo.set($event)"
-                (sorted)="toggleSort('ho')"
-                (menuToggled)="toggleFilter('ho', $event)"
-              />
-            </th>
-            <th>
-              <app-ui-table-head
-                label="Transfer of Custody (ToC)"
-                [options]="tocOptions()"
-                [sortDir]="sortDirOf('toc')"
-                [open]="openFilter() === 'toc'"
-                [selected]="filterToc()"
-                (selectedChange)="filterToc.set($event)"
-                (sorted)="toggleSort('toc')"
-                (menuToggled)="toggleFilter('toc', $event)"
-              />
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (ac of filteredFleet(); track ac.msn) {
-            <tr (click)="select(ac)">
-              <td class="msn">MSN {{ padMsn(ac.msn) }}</td>
-              <td>
-                <span class="nation">
-                  <app-flag-icon [nation]="ac.nation" />
-                  {{ ac.nation }}
-                </span>
-              </td>
-              <td>{{ ac.chief }}</td>
-              <td>{{ eventLabel(ac.event_type) }}</td>
-              <td>{{ loadLabel(ac.load_type) }}</td>
-              <td>{{ cellDate(ac.hang_over) }}</td>
-              <td>{{ cellDate(ac.transfer_of_custody) }}</td>
-            </tr>
-          } @empty {
-            <tr>
-              <td class="empty" colspan="7">No aircraft match these filters.</td>
-            </tr>
-          }
-        </tbody>
-      </table>
+      <app-ui-table
+        [columns]="fleetCols()"
+        [rows]="fleet()"
+        [search]="query()"
+        [framed]="false"
+        [rowClickable]="true"
+        initialSort="aircraft"
+        empty="No aircraft match these filters."
+        [trackBy]="trackAircraft"
+        (rowClick)="select($event)"
+      >
+        <ng-template uiTableCell="aircraft" let-ac>
+          <span class="msn">MSN {{ padMsn(ac.msn) }}</span>
+        </ng-template>
+        <ng-template uiTableCell="airforce" let-ac>
+          <span class="nation">
+            <app-flag-icon [nation]="ac.nation" />
+            {{ ac.nation }}
+          </span>
+        </ng-template>
+      </app-ui-table>
     }
   </div>
 </section>

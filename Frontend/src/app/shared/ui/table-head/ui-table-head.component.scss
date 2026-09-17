@@ -1,8 +1,17 @@
+:host {
+  display: flex;
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  min-width: max-content;
+}
+
 .head {
   position: relative;
   display: flex;
   align-items: center;
   gap: 0.2rem;
+  width: 100%;
 }
 
 .sort,
@@ -68,16 +77,11 @@
   color: var(--accent);
 }
 
-:host-context(th:nth-last-child(-n + 2)) .panel {
-  left: auto;
-  right: 0;
-}
-
 .panel {
-  position: absolute;
-  top: calc(100% + 0.4rem);
-  left: 0;
-  z-index: 20;
+  position: fixed;
+  top: var(--funnel-y, 0);
+  left: var(--funnel-x, 0);
+  z-index: 40;
   width: 13.5rem;
   padding: 0.65rem;
   border-radius: 12px;

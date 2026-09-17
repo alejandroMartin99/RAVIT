@@ -27,9 +27,17 @@ export class ModulePage implements OnInit {
   readonly icon = computed(() => (this.data()['icon'] as string) ?? '');
   readonly slug = computed(() => (this.data()['slug'] as string) ?? '');
   readonly childLabel = computed(() => (this.data()['childLabel'] as string) ?? null);
+  readonly childSlug = computed(() => (this.data()['childSlug'] as string) ?? null);
   readonly children = computed(
     () => SIDE_NAV.find((item) => item.slug === this.slug())?.children ?? [],
   );
+  readonly nested = computed(() => {
+    const childSlug = this.childSlug();
+    if (!childSlug) {
+      return [];
+    }
+    return this.children().find((item) => item.slug === childSlug)?.children ?? [];
+  });
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');

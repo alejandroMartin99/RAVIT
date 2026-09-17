@@ -1,0 +1,7 @@
+{
+  "source": "sw",
+  "label": "Software",
+  "file": { "extensions": [".xlsx", ".xlsm"] },
+  "columns": [],
+  "checks": []
+}

@@ -1,0 +1,7 @@
+{
+  "source": "wo",
+  "label": "Work Order",
+  "file": { "extensions": [".xlsx", ".xlsm"] },
+  "columns": [],
+  "checks": []
+}

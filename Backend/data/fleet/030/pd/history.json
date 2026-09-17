@@ -1,0 +1,15 @@
+{
+  "attempts": [
+    {
+      "id": "issue01",
+      "issue": "issue01",
+      "number": 1,
+      "status": "ok",
+      "message": null,
+      "source_file": null,
+      "uploaded_at": "2026-09-17T20:27:21.872700+00:00",
+      "uploaded_by": "James Hartley Cooper",
+      "rows": 14
+    }
+  ]
+}

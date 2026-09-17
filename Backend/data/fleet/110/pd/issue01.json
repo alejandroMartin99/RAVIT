@@ -1,0 +1,263 @@
+{
+  "issue": "issue01",
+  "number": 1,
+  "versions": [
+    "00.10",
+    "00.02",
+    "01.00"
+  ],
+  "rows": [
+    {
+      "reference": "A400M-PD-21-110-001",
+      "ata": "21-00-00",
+      "flags": {
+        "00.10": "Y",
+        "00.02": "Y",
+        "01.00": "Y"
+      },
+      "item_ref": "1.1",
+      "revision": "N/A",
+      "description": "Air conditioning pack operational check",
+      "fin_position": "21HA / LH",
+      "pn": "ABS0638A01",
+      "sn": "001238",
+      "type": "Service bulletin",
+      "source_material": "A400M-SB-21-0056",
+      "source_hours": "1.50"
+    },
+    {
+      "reference": "A400M-PD-24-220-014",
+      "ata": "24-00-00",
+      "flags": {
+        "00.10": "Y",
+        "00.02": "Y",
+        "01.00": "Y"
+      },
+      "item_ref": "1.2",
+      "revision": "00",
+      "description": "Electrical generation channel insulation test",
+      "fin_position": "21HA / RH",
+      "pn": "NSA5121-10",
+      "sn": "AB44192",
+      "type": "Maintenance task",
+      "source_material": "AMM 24-22-00-200-001",
+      "source_hours": "2.00"
+    },
+    {
+      "reference": "A400M-PD-27-310-008",
+      "ata": "27-30-00",
+      "flags": {
+        "00.10": "Y",
+        "00.02": "OUT",
+        "01.00": "OUT"
+      },
+      "item_ref": "1.3",
+      "revision": "01",
+      "description": "Flap transmission wear inspection",
+      "fin_position": "24CE1 / FWD",
+      "pn": "EN3646A61405FN",
+      "sn": "S/N 77421",
+      "type": "Service bulletin",
+      "source_material": "A400M-SB-28-0008",
+      "source_hours": "0.50"
+    },
+    {
+      "reference": "A400M-PD-28-410-003",
+      "ata": "28-10-00",
+      "flags": {
+        "00.10": "Y",
+        "00.02": "OUT",
+        "01.00": "OUT"
+      },
+      "item_ref": "1.4",
+      "revision": "03",
+      "description": "Fuel tank water drain and sample",
+      "fin_position": "27VE / CTR",
+      "pn": "ASNA2397-5",
+      "sn": "C04711",
+      "type": "Maintenance task",
+      "source_material": "AMM 29-10-00-610-801",
+      "source_hours": "4.00"
+    },
+    {
+      "reference": "A400M-PD-29-120-021",
+      "ata": "29-10-00",
+      "flags": {
+        "00.10": "Y",
+        "00.02": "Y",
+        "01.00": "Y"
+      },
+      "item_ref": "1.5",
+      "revision": "N/A",
+      "description": "Hydraulic pump case drain check",
+      "fin_position": "28QT / WING",
+      "pn": "D92910000000",
+      "sn": "XK-9082",
+      "type": "Service bulletin",
+      "source_material": "A400M-SB-36-0019",
+      "source_hours": "3.00"
+    },
+    {
+      "reference": "A400M-PD-32-210-006",
+      "ata": "32-20-00",
+      "flags": {
+        "00.10": "Y",
+        "00.02": "Y",
+        "01.00": "Y"
+      },
+      "item_ref": "1.6",
+      "revision": "00",
+      "description": "Landing gear retraction sequence test",
+      "fin_position": "32GB / NLG",
+      "pn": "NSA935401-03",
+      "sn": "SN 31004",
+      "type": "Maintenance task",
+      "source_material": "AMM 57-10-00-200-801",
+      "source_hours": "6.00"
+    },
+    {
+      "reference": "A400M-PD-36-140-012",
+      "ata": "36-10-00",
+      "flags": {
+        "00.10": "Y",
+        "00.02": "Y",
+        "01.00": "Y"
+      },
+      "item_ref": "1.7",
+      "revision": "01",
+      "description": "Bleed air leak detection functional test",
+      "fin_position": "",
+      "pn": "",
+      "sn": "",
+      "type": "Service bulletin",
+      "source_material": "A400M-SB-71-0023",
+      "source_hours": "1.00"
+    },
+    {
+      "reference": "A400M-PD-49-050-002",
+      "ata": "49-00-00",
+      "flags": {
+        "00.10": "Y",
+        "00.02": "OUT",
+        "01.00": "OUT"
+      },
+      "item_ref": "1.8",
+      "revision": "03",
+      "description": "APU start and load control check",
+      "fin_position": "49AP / APU",
+      "pn": "EN4165M02NF",
+      "sn": "004901",
+      "type": "Maintenance task",
+      "source_material": "AMM 21-00-00-710-801",
+      "source_hours": "2.50"
+    },
+    {
+      "reference": "A400M-PD-52-330-009",
+      "ata": "52-30-00",
+      "flags": {
+        "00.10": "Y",
+        "00.02": "Y",
+        "01.00": "Y"
+      },
+      "item_ref": "1.9",
+      "revision": "N/A",
+      "description": "Cargo door latch mechanism lubrication",
+      "fin_position": "52CD / CARGO",
+      "pn": "NSA9313-12",
+      "sn": "TR-2208",
+      "type": "Service bulletin",
+      "source_material": "A400M-SB-24-0012",
+      "source_hours": "1.50"
+    },
+    {
+      "reference": "A400M-PD-57-180-017",
+      "ata": "57-10-00",
+      "flags": {
+        "00.10": "Y",
+        "00.02": "Y",
+        "01.00": "Y"
+      },
+      "item_ref": "1.10",
+      "revision": "00",
+      "description": "Wing leading edge erosion survey",
+      "fin_position": "57LE / LE",
+      "pn": "A400M-28-410-003",
+      "sn": "SN 57118",
+      "type": "Maintenance task",
+      "source_material": "AMM 27-30-00-220-801",
+      "source_hours": "2.00"
+    },
+    {
+      "reference": "A400M-PD-71-040-005",
+      "ata": "71-00-00",
+      "flags": {
+        "00.10": "Y",
+        "00.02": "Y",
+        "01.00": "Y"
+      },
+      "item_ref": "1.11",
+      "revision": "01",
+      "description": "Power plant mount bolt torque check",
+      "fin_position": "71EM / ENG1",
+      "pn": "NSA5127-4",
+      "sn": "E71045",
+      "type": "Service bulletin",
+      "source_material": "A400M-SB-32-0041",
+      "source_hours": "0.50"
+    },
+    {
+      "reference": "A400M-PD-73-260-011",
+      "ata": "73-20-00",
+      "flags": {
+        "00.10": "Y",
+        "00.02": "OUT",
+        "01.00": "OUT"
+      },
+      "item_ref": "1.12",
+      "revision": "03",
+      "description": "Engine FADEC channel integrity test",
+      "fin_position": "73FA / ENG2",
+      "pn": "EN3646A61035FN",
+      "sn": "002611",
+      "type": "Maintenance task",
+      "source_material": "AMM 49-00-00-710-801",
+      "source_hours": "4.00"
+    },
+    {
+      "reference": "A400M-PD-78-090-004",
+      "ata": "78-30-00",
+      "flags": {
+        "00.10": "Y",
+        "00.02": "Y",
+        "01.00": "Y"
+      },
+      "item_ref": "1.13",
+      "revision": "N/A",
+      "description": "Thrust reverser lock indication check",
+      "fin_position": "78TR / ENG3",
+      "pn": "ABS1114-06",
+      "sn": "R78019",
+      "type": "Service bulletin",
+      "source_material": "A400M-SB-52-0007",
+      "source_hours": "3.00"
+    },
+    {
+      "reference": "A400M-PD-79-150-018",
+      "ata": "79-20-00",
+      "flags": {
+        "00.10": "Y",
+        "00.02": "Y",
+        "01.00": "Y"
+      },
+      "item_ref": "1.14",
+      "revision": "00",
+      "description": "Oil cooler bypass valve inspection",
+      "fin_position": "79OC / ENG4",
+      "pn": "NSA935501-08",
+      "sn": "SN 79150",
+      "type": "Maintenance task",
+      "source_material": "AMM 78-30-00-220-801",
+      "source_hours": "6.00"
+    }
+  ]
+}

@@ -1,0 +1,51 @@
+<div class="sheet" [class.is-bare]="!framed()" [class.filter-open]="!!openFilter()">
+  <table class="grid">
+    <thead>
+      <tr (click)="$event.stopPropagation()">
+        @for (col of columns(); track col.id) {
+          <th [class]="col.headerClass ?? ''">
+            @if (col.action) {
+              {{ col.label }}
+            } @else {
+              <app-ui-table-head
+                [label]="col.label"
+                [options]="options(col)"
+                [sortDir]="sortDirOf(col)"
+                [open]="openFilter() === col.id"
+                [selected]="selectedOf(col)"
+                (selectedChange)="setFilter(col, $event)"
+                (sorted)="toggleSort(col)"
+                (menuToggled)="toggleFilter(col, $event)"
+              />
+            }
+          </th>
+        }
+      </tr>
+    </thead>
+    <tbody>
+      @for (row of visible(); track trackOf(row)) {
+        <tr
+          [ngClass]="classes(row)"
+          [class.is-click]="rowClickable()"
+          (click)="rowClickable() ? rowClick.emit(row) : null"
+        >
+          @for (col of columns(); track col.id) {
+            <td [class]="cellClass(col, row)">
+              @if (templateFor(col.id); as tpl) {
+                <ng-container *ngTemplateOutlet="tpl; context: { $implicit: row, column: col }" />
+              } @else if (col.badge) {
+                <span class="flag" [class]="badgeClass(col.value(row))">{{ col.value(row) }}</span>
+              } @else if (!col.action) {
+                {{ col.value(row) }}
+              }
+            </td>
+          }
+        </tr>
+      } @empty {
+        <tr>
+          <td class="empty" [attr.colspan]="columns().length">{{ empty() }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

@@ -1,0 +1,119 @@
+{
+  "source": "pd",
+  "label": "Program Directive",
+  "file": {
+    "extensions": [".xlsx", ".xlsm"],
+    "max_bytes": 10485760
+  },
+  "sheet": {
+    "header_row": 1
+  },
+  "columns": [
+    {
+      "id": "item_ref",
+      "header": "ITEM REF",
+      "aliases": ["Item Ref", "ITEMREF", "Item"],
+      "required": true,
+      "allow_empty": false,
+      "unique": true,
+      "pattern": "^[0-9]+\\.[0-9]+$"
+    },
+    {
+      "id": "reference",
+      "header": "REFERENCE",
+      "aliases": ["Reference", "REF"],
+      "required": true,
+      "allow_empty": false,
+      "unique": true,
+      "unique_with": ["revision"],
+      "pattern": "^A400M-PD-[0-9]{2}-[0-9]{3}-[0-9]{3}$"
+    },
+    {
+      "id": "revision",
+      "header": "REVISION",
+      "aliases": ["Revision", "REV"],
+      "required": true,
+      "allow_empty": false,
+      "pad": 2,
+      "pattern": "^(N/A|[0-9]{2})$"
+    },
+    {
+      "id": "ata",
+      "header": "ATA",
+      "required": true,
+      "allow_empty": false,
+      "pattern": "^[0-9]{2}-[0-9]{2}-[0-9]{2}$"
+    },
+    {
+      "id": "description",
+      "header": "DESCRIPTION",
+      "aliases": ["Description", "Title", "TITLE"],
+      "required": true,
+      "allow_empty": false,
+      "min_length": 3
+    },
+    {
+      "id": "type",
+      "header": "TYPE",
+      "aliases": ["Type", "Task type", "PD TYPE"],
+      "required": true,
+      "allow_empty": false,
+      "enum": ["Service bulletin", "Maintenance task"]
+    },
+    {
+      "id": "source_material",
+      "header": "SOURCE MATERIAL",
+      "aliases": ["Source material", "Material", "Source"],
+      "required": true,
+      "allow_empty": false,
+      "min_length": 3
+    },
+    {
+      "id": "source_hours",
+      "header": "SOURCE HOURS",
+      "aliases": ["Source hours", "MH", "Manhours", "Hours"],
+      "required": true,
+      "allow_empty": false,
+      "pattern": "^[0-9]+(\\.[0-9]{1,2})?$"
+    },
+    {
+      "id": "fin_position",
+      "header": "FIN / POSITION",
+      "aliases": ["FIN/POSITION", "FIN", "Position"],
+      "required": true,
+      "allow_empty": true
+    },
+    {
+      "id": "pn",
+      "header": "PN",
+      "aliases": ["P/N", "Part Number", "PART NUMBER"],
+      "required": true,
+      "allow_empty": true
+    },
+    {
+      "id": "sn",
+      "header": "SN",
+      "aliases": ["S/N", "Serial Number", "SERIAL NUMBER"],
+      "required": true,
+      "allow_empty": true
+    }
+  ],
+  "version": {
+    "header_pattern": "^[0-9]{1,2}\\.[0-9]{2}$",
+    "allow_empty": false,
+    "enum": ["Y", "OUT"]
+  },
+  "checks": [
+    { "id": "source", "label": "Source file received" },
+    { "id": "format", "label": "Excel workbook format" },
+    { "id": "workbook", "label": "Workbook can be opened" },
+    { "id": "issue_name", "label": "Last column is named Issue XX" },
+    { "id": "issue_version", "label": "Column XX.00 matches the issue" },
+    { "id": "headers", "label": "Required columns are present" },
+    { "id": "empty", "label": "Required cells are not empty" },
+    { "id": "values", "label": "Column formats are valid" },
+    { "id": "flags", "label": "Applicability flags Y / OUT are sequential" },
+    { "id": "unique", "label": "ITEM REF and REFERENCE keys are unique" },
+    { "id": "store", "label": "Issue stored in the aircraft PD folder" }
+  ]
+}
