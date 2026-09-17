@@ -1,0 +1,14 @@
+:host {
+  display: inline-flex;
+  width: var(--flag-w, 1.75rem);
+  height: var(--flag-h, 1.15rem);
+  overflow: hidden;
+  border-radius: 3px;
+  box-shadow: 0 0 0 1px var(--hairline);
+}
+
+svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}

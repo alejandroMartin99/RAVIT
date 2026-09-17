@@ -1,0 +1,16 @@
+<div class="seg" role="listbox">
+  @for (opt of options(); track opt.value) {
+    <button
+      type="button"
+      role="option"
+      [attr.aria-selected]="value() === opt.value"
+      [class.is-on]="value() === opt.value"
+      (click)="choose(opt.value)"
+    >
+      @if (opt.nation) {
+        <app-flag-icon [nation]="opt.nation" />
+      }
+      {{ opt.label }}
+    </button>
+  }
+</div>

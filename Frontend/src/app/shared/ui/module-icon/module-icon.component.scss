@@ -1,0 +1,55 @@
+:host {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 2.35rem;
+  height: 2.35rem;
+  border-radius: 9px;
+  background: var(--fill);
+  color: var(--text);
+}
+
+svg {
+  width: 1.28rem;
+  height: 1.28rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+:host-context(.tile) {
+  width: 3.15rem;
+  height: 3.15rem;
+  border-radius: 12px;
+}
+
+:host-context(.tile) svg {
+  width: 1.7rem;
+  height: 1.7rem;
+}
+
+:host-context(.mod) {
+  width: 2.9rem;
+  height: 2.9rem;
+  border-radius: 11px;
+}
+
+:host-context(.sub) {
+  width: 1.85rem;
+  height: 1.85rem;
+  border-radius: 7px;
+  background: transparent;
+}
+
+:host-context(.sub) svg {
+  width: 1.05rem;
+  height: 1.05rem;
+}
+
+:host-context(.step-tile) {
+  width: 2rem;
+  height: 2rem;
+  background: transparent;
+}

@@ -1,0 +1,49 @@
+<div class="head">
+  <button type="button" class="sort" (click)="sorted.emit()">
+    <span>{{ label() }}</span>
+    <span class="arrow" [class.desc]="sortDir() === 'desc'" [class.on]="!!sortDir()">
+      <svg viewBox="0 0 12 12" aria-hidden="true">
+        <path d="M2.2 4.1 L6 8.1 L9.8 4.1" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </span>
+  </button>
+  <button
+    type="button"
+    class="funnel"
+    [class.on]="filtered() || open()"
+    aria-label="Filter"
+    (click)="$event.stopPropagation(); menuToggled.emit($event)"
+  >
+    <svg viewBox="0 0 16 16" aria-hidden="true">
+      <path d="M2 3h12L9.5 8.8V13l-3 1.5V8.8z" fill="currentColor"/>
+    </svg>
+  </button>
+  @if (open()) {
+    <div class="panel" (click)="$event.stopPropagation()">
+      <input
+        type="search"
+        [ngModel]="query()"
+        (ngModelChange)="query.set($event)"
+        placeholder="Search values…"
+      >
+      <div class="list">
+        @for (opt of visibleOptions(); track opt) {
+          <label>
+            <input
+              type="checkbox"
+              [checked]="isOn(opt)"
+              (change)="toggleValue(opt, $any($event.target).checked)"
+            >
+            <span>{{ opt }}</span>
+          </label>
+        } @empty {
+          <p class="none">No matches</p>
+        }
+      </div>
+      <div class="panel-actions">
+        <button type="button" (click)="selectAll()">All</button>
+        <button type="button" (click)="clear()">Clear</button>
+      </div>
+    </div>
+  }
+</div>

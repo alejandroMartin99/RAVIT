@@ -1,0 +1,5 @@
+IF DB_ID(N'ravit') IS NULL
+BEGIN
+  CREATE DATABASE [ravit];
+END
+GO

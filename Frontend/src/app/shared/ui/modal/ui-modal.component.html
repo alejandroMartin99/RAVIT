@@ -1,0 +1,21 @@
+@if (open()) {
+  <div class="scrim" (click)="closed.emit()">
+    <div
+      class="sheet"
+      role="dialog"
+      aria-modal="true"
+      [attr.aria-label]="title()"
+      (click)="$event.stopPropagation()"
+    >
+      <header class="head">
+        <h2>{{ title() }}</h2>
+        <button type="button" class="close" aria-label="Close" (click)="closed.emit()">
+          <span aria-hidden="true">×</span>
+        </button>
+      </header>
+      <div class="body">
+        <ng-content />
+      </div>
+    </div>
+  </div>
+}

@@ -1,0 +1,103 @@
+<div class="shell">
+  <header class="bar">
+    <button
+      type="button"
+      class="burger"
+      [class.is-open]="sidebarOpen()"
+      [attr.aria-expanded]="sidebarOpen()"
+      [attr.aria-label]="sidebarOpen() ? 'Close menu' : 'Open menu'"
+      (click)="toggleSidebar($event)"
+    >
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+
+    <div class="brand">
+      <p class="program">
+        <span>{{ program }}</span>
+        @if (msnTitle(); as msn) {
+          <span class="slash">/</span>
+          <span>{{ msn }}</span>
+        }
+      </p>
+      <nav class="path" aria-label="Breadcrumb">
+        @for (crumb of crumbs(); track $index; let last = $last) {
+          <span>{{ crumb }}</span>
+          @if (!last) {
+            <span class="sep">/</span>
+          }
+        }
+      </nav>
+    </div>
+  </header>
+
+  <div class="body">
+    <aside class="drawer" [class.is-open]="sidebarOpen()" aria-label="Main menu">
+      <p class="drawer-title">Menu</p>
+      <nav>
+        @for (item of sideNav; track item.id) {
+          @if (isGroup(item)) {
+            <div class="group">
+              <button
+                type="button"
+                class="block"
+                [class.is-off]="!canOpen(item)"
+                [class.is-open]="isExpanded(item)"
+                [disabled]="!canOpen(item)"
+                [attr.title]="canOpen(item) ? null : 'Select an aircraft first'"
+                (click)="toggleGroup(item, $event)"
+              >
+                <app-module-icon [name]="item.icon" />
+                <span class="copy">
+                  <span class="code">{{ item.code }}</span>
+                  <span class="name">{{ item.label }}</span>
+                </span>
+                <span class="chev" aria-hidden="true"></span>
+              </button>
+              @if (canOpen(item) && isExpanded(item) && item.children?.length) {
+                <div class="sub">
+                  @for (child of item.children; track child.id) {
+                    <a
+                      [routerLink]="childPath(item, child)"
+                      routerLinkActive="is-on"
+                      (click)="closeSidebar()"
+                    >
+                      <app-module-icon [name]="child.icon" />
+                      <span>{{ child.label }}</span>
+                    </a>
+                  }
+                </div>
+              }
+            </div>
+          } @else if (canOpen(item)) {
+            <a
+              class="block"
+              [routerLink]="pathFor(item)"
+              routerLinkActive="is-on"
+              [routerLinkActiveOptions]="{ exact: !item.slug }"
+            >
+              <app-module-icon [name]="item.icon" />
+              <span class="copy">
+                <span class="code">{{ item.code }}</span>
+                <span class="name">{{ item.label }}</span>
+              </span>
+            </a>
+          } @else {
+            <span class="block is-off" title="Select an aircraft first">
+              <app-module-icon [name]="item.icon" />
+              <span class="copy">
+                <span class="code">{{ item.code }}</span>
+                <span class="name">{{ item.label }}</span>
+              </span>
+            </span>
+          }
+        }
+      </nav>
+    </aside>
+
+    <main class="main">
+      <router-outlet />
+    </main>
+  </div>
+</div>

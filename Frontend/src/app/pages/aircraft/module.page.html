@@ -1,0 +1,34 @@
+<section class="wrap">
+  <header class="mod">
+    <app-module-icon [name]="icon()" />
+    <div>
+      <p class="kicker">{{ code() }}</p>
+      <h1>{{ label() }}</h1>
+    </div>
+  </header>
+
+  @if (childLabel(); as child) {
+    <article class="panel">
+      <p class="step">Current step</p>
+      <h2>{{ child }}</h2>
+      <p class="hint">This block will open here. Content comes next.</p>
+    </article>
+  } @else if (children().length) {
+    <div class="steps">
+      @for (item of children(); track item.id) {
+        <a
+          class="step-tile"
+          [routerLink]="['/aircraft', aircraftId, slug(), item.slug]"
+          routerLinkActive="is-on"
+        >
+          <app-module-icon [name]="item.icon" />
+          <span class="step-name">{{ item.label }}</span>
+        </a>
+      }
+    </div>
+  } @else {
+    <article class="panel">
+      <p class="hint">This block will open here. Content comes next.</p>
+    </article>
+  }
+</section>

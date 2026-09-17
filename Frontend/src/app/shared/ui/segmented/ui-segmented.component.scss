@@ -1,0 +1,42 @@
+.seg {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  padding: 0.22rem;
+  border-radius: 12px;
+  background: var(--fill);
+}
+
+button {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 2.35rem;
+  padding: 0.35rem 0.45rem;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
+}
+
+button.is-on {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-seg);
+}
+
+button:hover:not(.is-on) {
+  color: var(--text);
+}
+
+app-flag-icon {
+  --flag-w: 1.45rem;
+  --flag-h: 0.95rem;
+}
