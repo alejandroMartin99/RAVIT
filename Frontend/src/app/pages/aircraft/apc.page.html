@@ -53,7 +53,12 @@
               [class.st-fail]="item.status === 'fail'"
             >
               <span class="mark" aria-hidden="true"></span>
-              <span>{{ item.label }}</span>
+              <span>
+                {{ item.label }}
+                @if (item.status === 'fail' && item.detail) {
+                  <small class="fail-lines">{{ item.detail }}</small>
+                }
+              </span>
             </li>
           }
         </ul>
@@ -62,7 +67,7 @@
   }
 
   @if (ingest()) {
-    @if (!uploading() && (history().length || others().length || current())) {
+    @if (history().length || others().length || current()) {
       <div class="toolbar">
         <p class="hint tight">First pick an APC from this air force. Other fleets are listed below if you need to assign one of those instead.</p>
         <button type="button" class="go" (click)="openPicker()">Upload new APC</button>

@@ -5,21 +5,25 @@ import { tap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { ToastService } from './toast.service';
 
-export type PdFlag = 'Y' | 'OUT';
+export type PdFlag = 'Y' | 'OUT' | 'UNDER REVIEW';
 
 export interface PdRow {
   item_ref?: string;
-  reference: string;
-  revision: string;
-  ata: string;
+  scope_comitee_id?: string;
+  document_type?: string;
+  task_reference?: string;
+  revision?: string;
   description?: string;
   title?: string;
-  type?: string;
-  source_material?: string;
-  source_hours?: string;
-  fin_position?: string;
   pn?: string;
   sn?: string;
+  fin_position?: string;
+  source_material?: string;
+  source_hours?: string;
+  pd_comment?: string;
+  reference?: string;
+  ata?: string;
+  type?: string;
   flags: Record<string, PdFlag>;
 }
 
@@ -41,6 +45,7 @@ export interface PdIssueRef {
   current: boolean;
   status?: 'ok' | 'fail';
   message?: string | null;
+  fail_rows?: PdFailRow[];
 }
 
 export interface PdList {
@@ -51,15 +56,19 @@ export interface PdList {
 
 export type PdCheckStatus = 'pending' | 'running' | 'ok' | 'fail';
 
+export type PdFailRow = Record<string, string | number | undefined> & { line?: number };
+
 export interface PdIngestEvent {
-  kind: 'plan' | 'step' | 'done' | 'error';
+  kind: 'plan' | 'step' | 'done' | 'error' | 'replace';
   id?: string;
   label?: string;
   status?: PdCheckStatus;
   detail?: string;
   percent: number;
   message?: string;
+  version?: string;
   issue?: PdIssue;
+  rows?: PdFailRow[];
   checks?: { id: string; label: string }[];
 }
 
@@ -109,6 +118,19 @@ export class PdService {
         error: () => this.toast.fail('Could not download this file'),
       }),
     );
+  }
+
+  commitReplace(aircraftId: string, version: string) {
+    return this.http.post<PdIssue>(`${this.url(aircraftId)}ingest/commit`, null, { params: { version } }).pipe(
+      tap({
+        next: () => this.toast.ok('Program Directive replaced'),
+        error: () => this.toast.fail('Could not replace this Program Directive'),
+      }),
+    );
+  }
+
+  discardReplace(aircraftId: string, version: string) {
+    return this.http.delete<{ ok: boolean }>(`${this.url(aircraftId)}ingest/pending`, { params: { version } });
   }
 
   ingest(aircraftId: string, file: File): Observable<PdIngestEvent> {

@@ -20,6 +20,7 @@ interface IngestStep {
   id: string;
   label: string;
   status: PdCheckStatus;
+  detail?: string;
 }
 
 @Component({
@@ -214,10 +215,12 @@ export class ApcPage implements OnInit {
     if (event.kind === 'step' && event.id && event.status) {
       this.steps.update((list) => {
         if (!list.some((step) => step.id === event.id)) {
-          return [...list, { id: event.id!, label: event.label || event.id!, status: event.status! }];
+          return [...list, { id: event.id!, label: event.label || event.id!, status: event.status!, detail: event.detail }];
         }
         return list.map((step) =>
-          step.id === event.id ? { ...step, status: event.status!, label: event.label || step.label } : step,
+          step.id === event.id
+            ? { ...step, status: event.status!, label: event.label || step.label, detail: event.detail || step.detail }
+            : step,
         );
       });
       return;

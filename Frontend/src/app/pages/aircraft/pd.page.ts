@@ -2,7 +2,7 @@ import { DatePipe } from '@angular/common';
 import { Component, ElementRef, HostListener, OnInit, computed, inject, signal, viewChild } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { PdCheckStatus, PdIngestEvent, PdIssue, PdIssueRef, PdRow, PdService } from '../../services/pd.service';
+import { PdCheckStatus, PdFailRow, PdIngestEvent, PdIssue, PdIssueRef, PdRow, PdService } from '../../services/pd.service';
 import { AircraftService } from '../../services/aircraft.service';
 import { WorkspaceService } from '../../services/workspace.service';
 import { ModuleIconComponent } from '../../shared/ui/module-icon/module-icon.component';
@@ -10,6 +10,7 @@ import { UiHelpComponent } from '../../shared/ui/help/ui-help.component';
 import { UiButtonComponent } from '../../shared/ui/button/ui-button.component';
 import { UiModalComponent } from '../../shared/ui/modal/ui-modal.component';
 import { UiTableCellDirective } from '../../shared/ui/table/ui-table-cell.directive';
+import { UiTableExpandDirective } from '../../shared/ui/table/ui-table-expand.directive';
 import { UiTableColumn } from '../../shared/ui/table/ui-table.column';
 import { UiTableComponent } from '../../shared/ui/table/ui-table.component';
 import { forkJoin, timer } from 'rxjs';
@@ -18,14 +19,13 @@ interface IngestStep {
   id: string;
   label: string;
   status: PdCheckStatus;
+  detail?: string;
 }
-
-type TableCol = { id: string; label: string };
 
 @Component({
   selector: 'app-pd',
   standalone: true,
-  imports: [RouterLink, DatePipe, ModuleIconComponent, UiTableComponent, UiTableCellDirective, UiModalComponent, UiButtonComponent, UiHelpComponent],
+  imports: [RouterLink, DatePipe, ModuleIconComponent, UiTableComponent, UiTableCellDirective, UiTableExpandDirective, UiModalComponent, UiButtonComponent, UiHelpComponent],
   providers: [DatePipe],
   templateUrl: './pd.page.html',
   styleUrl: './pd.page.scss',
@@ -40,7 +40,10 @@ export class PdPage implements OnInit {
   private readonly picker = viewChild<ElementRef<HTMLInputElement>>('picker');
 
   private readonly data = toSignal(this.route.data, { initialValue: this.route.snapshot.data });
-  readonly aircraftId = this.route.snapshot.paramMap.get('id') ?? '';
+  private readonly aircraftIdSig = signal(this.route.snapshot.paramMap.get('id') ?? '');
+  get aircraftId(): string {
+    return this.aircraftIdSig();
+  }
   readonly circ = 2 * Math.PI * 52;
 
   readonly code = computed(() => (this.data()['code'] as string) ?? '');
@@ -66,13 +69,18 @@ export class PdPage implements OnInit {
   readonly fileName = signal<string | null>(null);
   readonly error = signal<string | null>(null);
   readonly pendingDelete = signal<PdIssueRef | null>(null);
-  readonly skelCols = signal<TableCol[]>([]);
+  readonly pendingReplace = signal<string | null>(null);
+  readonly failRows = signal<PdFailRow[]>([]);
+  readonly trackFailRow = (row: PdFailRow) => String(row.line ?? '');
+  readonly historyCanExpand = (item: PdIssueRef) => item.status === 'fail' && !!(item.fail_rows?.length || item.message);
+  readonly skelCols = signal<{ id: string; label: string }[]>([]);
   readonly skelRows = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
   private loadGen = 0;
   private readonly minLoadMs = 1000;
 
   readonly trackHistory = (item: PdIssueRef) => item.id;
-  readonly trackRow = (row: PdRow) => `${row.item_ref ?? ''}-${row.reference}-${row.revision}`;
+  readonly trackRow = (row: PdRow) =>
+    `${row.item_ref ?? ''}-${row.task_reference ?? row.reference ?? ''}-${row.revision ?? ''}`;
   readonly historyRowClass = (item: PdIssueRef) => ({ 'is-current': item.current, 'is-fail': item.status === 'fail' });
 
   readonly histCols = computed<UiTableColumn<PdIssueRef>[]>(() => [
@@ -89,7 +97,8 @@ export class PdPage implements OnInit {
     {
       id: 'note',
       label: 'Current',
-      value: (item) => (item.current ? 'Current' : item.status === 'fail' && item.message ? item.message : '—'),
+      value: (item) => (item.current ? 'Current' : this.failNote(item)),
+      clip: false,
     },
     { id: 'actions', label: '', value: () => '', action: true, headerClass: 'act-col', cellClass: 'act-col' },
   ]);
@@ -98,16 +107,17 @@ export class PdPage implements OnInit {
     const versions = this.issue()?.versions ?? [];
     return [
       { id: 'item_ref', label: 'Item ref', value: (row) => row.item_ref || '', cellClass: 'ref' },
-      { id: 'reference', label: 'Reference', value: (row) => row.reference, cellClass: 'ref' },
-      { id: 'revision', label: 'Revision', value: (row) => row.revision, cellClass: 'rev' },
-      { id: 'ata', label: 'ATA', value: (row) => row.ata },
+      { id: 'scope_comitee_id', label: 'Scope comitee ID', value: (row) => row.scope_comitee_id || row.reference || '', cellClass: 'ref' },
+      { id: 'document_type', label: 'Document type', value: (row) => row.document_type || row.type || '' },
+      { id: 'task_reference', label: 'Task reference', value: (row) => row.task_reference || '', cellClass: 'ref' },
+      { id: 'revision', label: 'Revision', value: (row) => row.revision || '', cellClass: 'rev' },
       { id: 'description', label: 'Description', value: (row) => this.rowText(row) },
-      { id: 'type', label: 'Type', value: (row) => row.type || '' },
-      { id: 'source_material', label: 'Source material', value: (row) => row.source_material || '' },
-      { id: 'source_hours', label: 'Source hours', value: (row) => row.source_hours || '' },
-      { id: 'fin_position', label: 'FIN / Position', value: (row) => row.fin_position || '' },
       { id: 'pn', label: 'PN', value: (row) => row.pn || '' },
       { id: 'sn', label: 'SN', value: (row) => row.sn || '' },
+      { id: 'fin_position', label: 'FIN / Position', value: (row) => row.fin_position || '' },
+      { id: 'source_material', label: 'Source material', value: (row) => row.source_material || '' },
+      { id: 'source_hours', label: 'Source hours', value: (row) => row.source_hours || '' },
+      { id: 'pd_comment', label: 'PD comment', value: (row) => row.pd_comment || '' },
       ...versions.map((col) => ({
         id: `flag:${col}`,
         label: col,
@@ -120,21 +130,13 @@ export class PdPage implements OnInit {
   });
 
   ngOnInit(): void {
-    const id = this.route.snapshot.paramMap.get('id');
-    if (!id) {
-      void this.router.navigateByUrl('/');
-      return;
-    }
-    this.skelCols.set(this.colsForIssue('issue02'));
-    this.aircraftApi.get(id).subscribe({
-      next: (item) => {
-        this.workspace.enter(item);
-        this.reload();
-      },
-      error: () => {
-        this.workspace.leave();
+    this.route.paramMap.subscribe((params) => {
+      const id = params.get('id');
+      if (!id) {
         void this.router.navigateByUrl('/');
-      },
+        return;
+      }
+      this.bindAircraft(id);
     });
   }
 
@@ -146,10 +148,56 @@ export class PdPage implements OnInit {
       const found = this.issues().find((entry) => entry.issue === item || entry.id === item);
       return found ? this.issueLabel(found) : item;
     }
-    if (item.status === 'fail' || !item.number) {
+    if (item.status === 'fail') {
+      return '—';
+    }
+    if (item.issue && /^\d{2}\.\d{2}$/.test(item.issue)) {
+      return `Issue ${item.issue}`;
+    }
+    if (!item.number) {
       return '—';
     }
     return `Issue ${item.number.toString().padStart(2, '0')}`;
+  }
+
+  failNote(item: PdIssueRef): string {
+    if (item.status !== 'fail') {
+      return '—';
+    }
+    const n = item.fail_rows?.length ?? 0;
+    if (n === 1) {
+      return '1 failing row';
+    }
+    if (n > 1) {
+      return `${n} failing rows`;
+    }
+    return item.message ? 'Validation failed' : '—';
+  }
+
+  failColsFor(rows: PdFailRow[]): UiTableColumn<PdFailRow>[] {
+    const labels: Record<string, string> = {
+      line: 'Excel row',
+      item_ref: 'Item ref',
+      scope_comitee_id: 'Scope comitee ID',
+      document_type: 'Document type',
+      task_reference: 'Task reference',
+      revision: 'Revision',
+      description: 'Description',
+      pn: 'PN',
+      sn: 'SN',
+      fin_position: 'FIN / Position',
+      source_material: 'Source material',
+      source_hours: 'Source hours',
+      pd_comment: 'PD comment',
+    };
+    const sample = rows[0] ?? {};
+    const keys = ['line', ...Object.keys(sample).filter((key) => key !== 'line' && key !== 'issue_col' && key !== 'issue_value')];
+    return [...new Set(keys)].map((id) => ({
+      id,
+      label: labels[id] || id,
+      value: (row) => String(row[id] ?? ''),
+      clip: false,
+    }));
   }
 
   @HostListener('document:click', ['$event'])
@@ -210,7 +258,7 @@ export class PdPage implements OnInit {
     if (!item) {
       return;
     }
-        this.pdApi.deleteHistory(this.aircraftId, item.id).subscribe({
+    this.pdApi.deleteHistory(this.aircraftId, item.id).subscribe({
       next: () => {
         this.pendingDelete.set(null);
         if (this.issue()?.issue === item.issue) {
@@ -239,6 +287,7 @@ export class PdPage implements OnInit {
     this.error.set(null);
     this.percent.set(0);
     this.steps.set([]);
+    this.failRows.set([]);
     this.fileName.set(file.name);
     this.pdApi.ingest(this.aircraftId, file).subscribe({
       next: (event) => this.onIngest(event),
@@ -250,6 +299,26 @@ export class PdPage implements OnInit {
     });
   }
 
+  confirmReplace(): void {
+    const version = this.pendingReplace();
+    if (!version) {
+      return;
+    }
+    this.pendingReplace.set(null);
+    this.pdApi.commitReplace(this.aircraftId, version).subscribe({
+      next: () => this.refreshList(),
+      error: () => this.error.set('Could not replace this Program Directive.'),
+    });
+  }
+
+  cancelReplace(): void {
+    const version = this.pendingReplace();
+    this.pendingReplace.set(null);
+    if (version) {
+      this.pdApi.discardReplace(this.aircraftId, version).subscribe();
+    }
+  }
+
   private onIngest(event: PdIngestEvent): void {
     this.percent.set(event.percent);
     if (event.kind === 'plan' && event.checks) {
@@ -257,24 +326,44 @@ export class PdPage implements OnInit {
       return;
     }
     if (event.kind === 'step' && event.id && event.status) {
+      if (event.rows?.length) {
+        this.failRows.set(event.rows);
+      }
       this.steps.update((list) => {
         if (!list.some((step) => step.id === event.id)) {
-          return [...list, { id: event.id!, label: event.label || event.id!, status: event.status! }];
+          return [...list, { id: event.id!, label: event.label || event.id!, status: event.status!, detail: event.detail }];
         }
         return list.map((step) =>
-          step.id === event.id ? { ...step, status: event.status!, label: event.label || step.label } : step,
+          step.id === event.id
+            ? { ...step, status: event.status!, label: event.label || step.label, detail: event.detail || step.detail }
+            : step,
         );
       });
       return;
     }
+    if (event.kind === 'replace' && event.version) {
+      this.pendingReplace.set(event.version);
+      this.closeIngestPanel();
+      return;
+    }
     if (event.kind === 'error') {
       this.error.set(event.message ?? 'Validation failed.');
+      if (event.rows?.length) {
+        this.failRows.set(event.rows);
+      }
       this.refreshList();
       return;
     }
-    if (event.kind === 'done' && event.issue) {
+    if (event.kind === 'done') {
+      this.closeIngestPanel();
       this.refreshList();
     }
+  }
+
+  private closeIngestPanel(): void {
+    this.steps.set([]);
+    this.percent.set(0);
+    this.fileName.set(null);
   }
 
   private reload(): void {
@@ -305,10 +394,29 @@ export class PdPage implements OnInit {
     });
   }
 
+  private bindAircraft(id: string): void {
+    this.aircraftIdSig.set(id);
+    this.aircraftApi.get(id).subscribe({
+      next: (item) => {
+        this.workspace.enter(item);
+        this.reload();
+      },
+      error: () => {
+        this.workspace.leave();
+        void this.router.navigateByUrl('/');
+      },
+    });
+  }
+
   private loadIssue(issue: string): void {
     const gen = ++this.loadGen;
     this.loading.set(true);
-    this.skelCols.set(this.colsForIssue(issue));
+    this.skelCols.set([
+      { id: 'item_ref', label: 'Item ref' },
+      { id: 'task_reference', label: 'Task reference' },
+      { id: 'revision', label: 'Revision' },
+      { id: 'description', label: 'Description' },
+    ]);
     forkJoin({
       payload: this.pdApi.get(this.aircraftId, issue),
       wait: timer(this.minLoadMs),
@@ -330,21 +438,4 @@ export class PdPage implements OnInit {
     });
   }
 
-  private colsForIssue(_issue: string): TableCol[] {
-    const versions = this.issue()?.versions ?? [];
-    return [
-      { id: 'item_ref', label: 'Item ref' },
-      { id: 'reference', label: 'Reference' },
-      { id: 'revision', label: 'Revision' },
-      { id: 'ata', label: 'ATA' },
-      { id: 'description', label: 'Description' },
-      { id: 'type', label: 'Type' },
-      { id: 'source_material', label: 'Source material' },
-      { id: 'source_hours', label: 'Source hours' },
-      { id: 'fin_position', label: 'FIN / Position' },
-      { id: 'pn', label: 'PN' },
-      { id: 'sn', label: 'SN' },
-      ...versions.map((col) => ({ id: `flag:${col}`, label: col })),
-    ];
-  }
 }

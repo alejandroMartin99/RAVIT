@@ -7,4 +7,5 @@ export interface UiTableColumn<T = unknown> {
   headerClass?: string;
   action?: boolean;
   badge?: boolean;
+  clip?: boolean;
 }

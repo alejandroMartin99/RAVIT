@@ -2,6 +2,9 @@
   <table class="grid">
     <thead>
       <tr (click)="$event.stopPropagation()">
+        @if (expandTpl()) {
+          <th class="exp-col"></th>
+        }
         @for (col of columns(); track col.id) {
           <th [class]="col.headerClass ?? ''">
             @if (col.action) {
@@ -26,24 +29,67 @@
       @for (row of visible(); track trackOf(row)) {
         <tr
           [ngClass]="classes(row)"
-          [class.is-click]="rowClickable()"
-          (click)="rowClickable() ? rowClick.emit(row) : null"
+          [class.is-click]="rowClickable() || expandable(row)"
+          [class.is-open]="isOpen(row)"
+          (click)="onRowClick($event, row)"
         >
+          @if (expandTpl()) {
+            <td class="exp-col">
+              @if (expandable(row)) {
+                <button type="button" class="exp-btn" [class.is-open]="isOpen(row)" aria-label="Toggle details" (click)="toggleExpand($event, row)">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path fill="currentColor" d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6z" />
+                  </svg>
+                </button>
+              }
+            </td>
+          }
           @for (col of columns(); track col.id) {
-            <td [class]="cellClass(col, row)">
+            <td [class]="cellClass(col, row)" [class.has-clip]="!col.action && !col.badge && col.clip !== false">
               @if (templateFor(col.id); as tpl) {
-                <ng-container *ngTemplateOutlet="tpl; context: { $implicit: row, column: col }" />
+                @if (col.action || col.badge) {
+                  <ng-container *ngTemplateOutlet="tpl; context: { $implicit: row, column: col }" />
+                } @else {
+                  <div class="clip">
+                    <span class="clip-text">
+                      <ng-container *ngTemplateOutlet="tpl; context: { $implicit: row, column: col }" />
+                    </span>
+                    @if (clipped(col, row)) {
+                      <button type="button" class="more" (click)="toggleClip($event, col, row)">…</button>
+                    }
+                    @if (clipKey() === clipId(col, row)) {
+                      <div class="clip-pop" (click)="$event.stopPropagation()">{{ col.value(row) }}</div>
+                    }
+                  </div>
+                }
               } @else if (col.badge) {
                 <span class="flag" [class]="badgeClass(col.value(row))">{{ col.value(row) }}</span>
               } @else if (!col.action) {
-                {{ col.value(row) }}
+                <div class="clip">
+                  <span class="clip-text">{{ col.value(row) }}</span>
+                  @if (clipped(col, row)) {
+                    <button type="button" class="more" (click)="toggleClip($event, col, row)">…</button>
+                  }
+                  @if (clipKey() === clipId(col, row)) {
+                    <div class="clip-pop" (click)="$event.stopPropagation()">{{ col.value(row) }}</div>
+                  }
+                </div>
               }
             </td>
           }
         </tr>
+        @if (isOpen(row) && expandTpl(); as tpl) {
+          <tr class="expand-row">
+            <td [attr.colspan]="colCount()">
+              <div class="expand-panel">
+                <ng-container *ngTemplateOutlet="tpl; context: { $implicit: row }" />
+              </div>
+            </td>
+          </tr>
+        }
       } @empty {
         <tr>
-          <td class="empty" [attr.colspan]="columns().length">{{ empty() }}</td>
+          <td class="empty" [attr.colspan]="colCount()">{{ empty() }}</td>
         </tr>
       }
     </tbody>

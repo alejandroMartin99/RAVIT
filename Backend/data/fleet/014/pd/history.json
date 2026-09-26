@@ -1,26 +1,16 @@
 {
   "attempts": [
     {
-      "id": "issue01",
-      "issue": "issue01",
-      "number": 1,
+      "id": "a001",
+      "issue": "04.00",
+      "number": 4,
       "status": "ok",
       "message": null,
-      "source_file": null,
-      "uploaded_at": "2026-09-17T19:57:23.327832+00:00",
+      "source_file": "Issue 04.00.xlsx",
+      "uploaded_at": "2026-09-26T12:55:24.049166+00:00",
       "uploaded_by": "Alejandro Mart\u00edn Iglesias",
-      "rows": 14
-    },
-    {
-      "id": "issue02",
-      "issue": "issue02",
-      "number": 2,
-      "status": "ok",
-      "message": null,
-      "source_file": null,
-      "uploaded_at": "2026-09-17T19:57:23.339816+00:00",
-      "uploaded_by": "Alejandro Mart\u00edn Iglesias",
-      "rows": 14
+      "rows": 625,
+      "fail_rows": []
     }
   ]
 }

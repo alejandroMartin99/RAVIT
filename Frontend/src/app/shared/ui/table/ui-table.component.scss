@@ -1,8 +1,14 @@
 :host {
   display: block;
+  --table-max-h: min(68vh, calc(100dvh - 14rem));
+}
+
+:host.is-fit {
+  --table-max-h: min(22rem, 40vh);
 }
 
 .sheet {
+  max-height: var(--table-max-h);
   overflow: auto;
   border: 1px solid var(--hairline);
   border-radius: var(--radius-lg);
@@ -10,7 +16,6 @@
 }
 
 .sheet.is-bare {
-  overflow: visible;
   border: 0;
   border-radius: 0;
   background: transparent;
@@ -22,7 +27,7 @@
 
 .sheet.filter-open,
 .sheet:has(.acts:hover) {
-  overflow: visible;
+  overflow: auto;
 }
 
 .grid {
@@ -35,7 +40,7 @@
 .grid thead {
   position: sticky;
   top: 0;
-  z-index: 3;
+  z-index: 4;
 }
 
 .grid th,
@@ -47,11 +52,13 @@
 }
 
 .grid th {
-  position: relative;
-  z-index: 3;
+  position: sticky;
+  top: 0;
+  z-index: 4;
   overflow: visible;
   min-width: 8.5rem;
   background: var(--surface);
+  box-shadow: 0 1px 0 var(--hairline);
   color: #3a3a3c;
   font-size: 0.72rem;
   font-weight: 600;
@@ -61,7 +68,65 @@
 }
 
 .grid td {
+  position: relative;
   font-size: 0.9rem;
+}
+
+.has-clip {
+  max-width: 16.5rem;
+}
+
+.clip {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  max-width: 16rem;
+}
+
+.clip-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.more {
+  flex: none;
+  min-width: 1.45rem;
+  padding: 0.05rem 0.35rem;
+  border: 0;
+  border-radius: 980px;
+  background: var(--fill);
+  color: #3a3a3c;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+}
+
+.more:hover,
+.more:focus-visible {
+  background: var(--fill-strong);
+}
+
+.clip-pop {
+  position: absolute;
+  z-index: 8;
+  top: calc(100% - 0.15rem);
+  left: 0.7rem;
+  width: min(28rem, 68vw);
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: var(--shadow-float);
+  color: var(--text);
+  font-size: 0.86rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .grid tbody tr:last-child td {
@@ -131,6 +196,68 @@
 .flag.is-fail {
   background: #f8d7da;
   color: #c41e3a;
+}
+
+.exp-col {
+  width: 2.4rem;
+  min-width: 2.4rem;
+  padding: 0.45rem 0.35rem;
+}
+
+.exp-btn {
+  display: grid;
+  place-items: center;
+  width: 1.7rem;
+  height: 1.7rem;
+  border: 0;
+  border-radius: 50%;
+  background: #efeff2;
+  color: #3a3a3c;
+  cursor: pointer;
+}
+
+.exp-btn:hover {
+  background: #e4e4e8;
+}
+
+.exp-btn svg {
+  width: 0.95rem;
+  height: 0.95rem;
+  transition: transform 0.18s ease;
+}
+
+.exp-btn.is-open {
+  background: #e8e8ec;
+}
+
+.exp-btn.is-open svg {
+  transform: rotate(180deg);
+}
+
+.grid tbody tr.is-open td {
+  border-bottom-color: transparent;
+}
+
+.expand-row td {
+  padding: 0;
+  background: #f6f6f8;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.expand-panel {
+  padding: 0.85rem 1rem 1.05rem;
+  animation: expand-in 0.18s ease;
+}
+
+@keyframes expand-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.25rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .ref {

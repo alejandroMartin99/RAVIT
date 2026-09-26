@@ -1,7 +1,8 @@
 import { NgClass, NgTemplateOutlet } from '@angular/common';
-import { Component, HostListener, computed, contentChildren, input, output, signal } from '@angular/core';
+import { Component, HostListener, computed, contentChild, contentChildren, input, output, signal } from '@angular/core';
 import { UiTableHeadComponent } from '../table-head/ui-table-head.component';
 import { UiTableCellDirective } from './ui-table-cell.directive';
+import { UiTableExpandDirective } from './ui-table-expand.directive';
 import { UiTableColumn } from './ui-table.column';
 
 @Component({
@@ -10,6 +11,7 @@ import { UiTableColumn } from './ui-table.column';
   imports: [NgClass, NgTemplateOutlet, UiTableHeadComponent],
   templateUrl: './ui-table.component.html',
   styleUrl: './ui-table.component.scss',
+  host: { '[class.is-fit]': 'fit() === "content"' },
 })
 export class UiTableComponent<T = unknown> {
   readonly columns = input.required<UiTableColumn<T>[]>();
@@ -17,19 +19,25 @@ export class UiTableComponent<T = unknown> {
   readonly search = input('');
   readonly empty = input('No rows match these filters.');
   readonly framed = input(true);
+  readonly fit = input<'fill' | 'content'>('fill');
   readonly rowClickable = input(false);
   readonly initialSort = input<string | null>(null);
   readonly initialDir = input<'asc' | 'desc'>('asc');
   readonly trackBy = input<(row: T) => unknown>((row) => row);
   readonly rowClass = input<(row: T) => string | Record<string, boolean>>(() => '');
+  readonly canExpand = input<(row: T) => boolean>(() => false);
 
   readonly rowClick = output<T>();
 
   private readonly cells = contentChildren(UiTableCellDirective);
+  private readonly expand = contentChild(UiTableExpandDirective);
+  readonly expanded = signal<unknown | null>(null);
   readonly sortKey = signal<string | null>(null);
   readonly sortDir = signal<'asc' | 'desc'>('asc');
   readonly openFilter = signal<string | null>(null);
+  readonly clipKey = signal<string | null>(null);
   readonly filters = signal<Record<string, string[] | null>>({});
+  private readonly clipLimit = 42;
 
   readonly visible = computed(() => {
     const cols = this.columns();
@@ -50,15 +58,58 @@ export class UiTableComponent<T = unknown> {
     if (!path.some((node) => node instanceof HTMLElement && node.tagName === 'APP-UI-TABLE-HEAD')) {
       this.openFilter.set(null);
     }
+    if (!path.some((node) => node instanceof HTMLElement && node.classList.contains('clip'))) {
+      this.clipKey.set(null);
+    }
   }
 
   @HostListener('document:keydown.escape')
   onEscape(): void {
     this.openFilter.set(null);
+    this.clipKey.set(null);
   }
 
   templateFor(id: string) {
     return this.cells().find((cell) => cell.name() === id)?.tpl ?? null;
+  }
+
+  expandTpl() {
+    return this.expand()?.tpl ?? null;
+  }
+
+  colCount(): number {
+    return this.columns().length + (this.expandTpl() ? 1 : 0);
+  }
+
+  expandable(row: T): boolean {
+    return !!this.expandTpl() && this.canExpand()(row);
+  }
+
+  isOpen(row: T): boolean {
+    return this.expanded() === this.trackOf(row);
+  }
+
+  toggleExpand(event: Event, row: T): void {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!this.expandable(row)) {
+      return;
+    }
+    const key = this.trackOf(row);
+    this.expanded.update((cur) => (cur === key ? null : key));
+  }
+
+  onRowClick(event: MouseEvent, row: T): void {
+    if ((event.target as HTMLElement).closest('a, button, .acts')) {
+      return;
+    }
+    if (this.expandable(row)) {
+      this.toggleExpand(event, row);
+      return;
+    }
+    if (this.rowClickable()) {
+      this.rowClick.emit(row);
+    }
   }
 
   options(col: UiTableColumn<T>): string[] {
@@ -117,11 +168,29 @@ export class UiTableComponent<T = unknown> {
     return typeof value === 'function' ? value(row) : value ?? '';
   }
 
+  clipId(col: UiTableColumn<T>, row: T): string {
+    return `${String(this.trackOf(row))}:${col.id}`;
+  }
+
+  clipped(col: UiTableColumn<T>, row: T): boolean {
+    if (col.clip === false) {
+      return false;
+    }
+    return this.cellValue(col, row).replace(/\s+/g, ' ').trim().length > this.clipLimit;
+  }
+
+  toggleClip(event: Event, col: UiTableColumn<T>, row: T): void {
+    event.preventDefault();
+    event.stopPropagation();
+    const id = this.clipId(col, row);
+    this.clipKey.update((cur) => (cur === id ? null : id));
+  }
+
   badgeClass(value: string): string {
     if (value === 'Y' || value === 'OK' || value === 'Delivered') {
       return 'is-y';
     }
-    if (value === 'On going') {
+    if (value === 'On going' || value === 'UNDER REVIEW') {
       return 'is-on';
     }
     if (value === 'Fail') {

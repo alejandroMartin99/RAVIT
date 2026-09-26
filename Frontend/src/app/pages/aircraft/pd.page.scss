@@ -3,26 +3,36 @@
 }
 
 .wrap {
-  min-height: calc(100vh - 4.4rem);
-  padding: 1.6rem 2rem 2rem;
+  display: flex;
+  flex-direction: column;
+  padding: 1.6rem 2rem 1.15rem;
   background: var(--bg);
 }
 
+
 .mod {
+  position: relative;
+  z-index: 8;
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
   gap: 0.9rem;
   margin: 0 0 1.25rem;
 }
 
 .mod > div {
-  min-width: 0;
+  min-width: max-content;
 }
 
 .mod-title {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  white-space: nowrap;
+}
+
+.kicker {
+  white-space: nowrap;
 }
 
 .kicker,
@@ -60,10 +70,11 @@ h2 {
 
 .toolbar {
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
   justify-content: space-between;
-  gap: 0.85rem;
-  margin: 0 0 1rem;
+  gap: 1.25rem;
+  margin: 0 0 0.85rem;
 }
 
 .pick {
@@ -146,7 +157,7 @@ h2 {
   position: absolute;
   top: calc(100% + 0.4rem);
   left: 0;
-  z-index: 4;
+  z-index: 10;
   min-width: 100%;
   margin: 0;
   padding: 0.35rem;
@@ -197,6 +208,7 @@ h2 {
 }
 
 .sheet {
+  max-height: min(68vh, calc(100dvh - 14rem));
   overflow: auto;
   border: 1px solid var(--hairline);
   border-radius: var(--radius-lg);
@@ -213,7 +225,7 @@ h2 {
 .grid thead {
   position: sticky;
   top: 0;
-  z-index: 3;
+  z-index: 4;
 }
 
 .grid th,
@@ -225,11 +237,13 @@ h2 {
 }
 
 .grid th {
-  position: relative;
-  z-index: 3;
+  position: sticky;
+  top: 0;
+  z-index: 4;
   overflow: visible;
   min-width: 9.5rem;
   background: var(--surface);
+  box-shadow: 0 1px 0 var(--hairline);
   color: #3a3a3c;
   font-size: 0.72rem;
   font-weight: 600;
@@ -246,17 +260,25 @@ h2 {
   border-bottom: 0;
 }
 
-.flag-col {
-  text-align: center;
-  min-width: 8rem;
-  width: auto;
-}
-
 .fail-msg {
   display: block;
   color: #c41e3a;
   font-size: 0.78rem;
   font-weight: 500;
+}
+
+.fail-panel {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.fail-summary {
+  margin: 0;
+  color: #8a1f2d;
+  font-size: 0.8rem;
+  font-weight: 500;
+  line-height: 1.45;
+  white-space: pre-wrap;
 }
 
 .empty {
@@ -273,7 +295,8 @@ h2 {
 
 .hint.tight {
   margin: 0;
-  max-width: 36rem;
+  max-width: none;
+  white-space: nowrap;
 }
 
 .lib-gap {
@@ -409,11 +432,7 @@ h2 {
 }
 
 .visually-hidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
+  display: none;
 }
 
 .ingest {
@@ -505,6 +524,17 @@ h2 {
   color: #c41e3a;
 }
 
+.fail-lines {
+  display: block;
+  margin: 0.2rem 0 0;
+  color: #c41e3a;
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  white-space: pre-wrap;
+}
+
 .mark {
   position: relative;
   flex: 0 0 1.15rem;
@@ -571,7 +601,9 @@ h2 {
 
 .sheet.is-skel {
   position: relative;
-  overflow: hidden;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
   pointer-events: none;
 }
 
@@ -605,21 +637,6 @@ h2 {
   height: 0.62rem;
   color: transparent;
   user-select: none;
-}
-
-.skel-sm {
-  width: 46%;
-}
-
-.skel-lg {
-  width: 88%;
-}
-
-.skel-chip {
-  width: 3.1rem;
-  height: 1.15rem;
-  margin-inline: auto;
-  border-radius: 980px;
 }
 
 @keyframes skel-pulse {

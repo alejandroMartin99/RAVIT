@@ -33,6 +33,9 @@ class Context:
     rows: list[dict] = field(default_factory=list)
     header_cells: list[str] = field(default_factory=list)
     issue_number: int | None = None
+    file_version: str | None = None
+    failed: bool = False
+    fail_rows: list[dict] = field(default_factory=list)
 
 
 def _norm(value: object) -> str:
@@ -45,7 +48,10 @@ def _norm(value: object) -> str:
 
 def _cell(value: object) -> str:
     text = _norm(value)
-    return text.upper() if text.upper() in {"Y", "OUT"} else text
+    upper = text.upper()
+    if upper in {"Y", "OUT", "UNDER REVIEW"}:
+        return upper
+    return text
 
 
 def _format_value(column: dict, raw: object) -> str:
@@ -93,6 +99,9 @@ def _version_spec(rules: dict, col_id: str) -> dict:
     spec = dict(rules.get("version") or {})
     spec["id"] = col_id
     spec["header"] = col_id
+    spec.setdefault("allow_empty", True)
+    spec.pop("enum", None)
+    spec.pop("pattern", None)
     return spec
 
 
@@ -126,9 +135,8 @@ def _map_headers(sheet: Worksheet, rules: dict) -> dict[str, int]:
     if missing:
         raise ValueError("Missing columns: " + ", ".join(missing))
     used = set(mapped.values())
-    last_index = next((index for index in range(len(cells) - 1, -1, -1) if cells[index]), None)
     for index, name in enumerate(cells):
-        if index == last_index or index in used or not name:
+        if index in used or not name:
             continue
         vid = _version_id(name)
         if not vid or vid in mapped:
@@ -174,7 +182,7 @@ def _empty_errors(rules: dict, rows: list[dict]) -> list[str]:
         for row in rows:
             if not row.get(column["id"]):
                 errors.append(f"Row {row['_line']}: {column['header']} is empty")
-                if len(errors) >= 3:
+                if len(errors) >= 20:
                     return errors
     return errors
 
@@ -196,7 +204,7 @@ def _value_errors(rules: dict, rows: list[dict]) -> list[str]:
                 errors.append(f"Row {row['_line']}: {column['header']} must be {' / '.join(allowed)}")
             elif min_length and len(value) < min_length:
                 errors.append(f"Row {row['_line']}: {column['header']} is too short")
-            if len(errors) >= 3:
+            if len(errors) >= 20:
                 return errors
     return errors
 
@@ -219,7 +227,7 @@ def _flag_errors(rules: dict, rows: list[dict]) -> list[str]:
                 errors.append(f"Row {row['_line']}: {col} cannot be Y after OUT")
             if value == "OUT":
                 locked = True
-            if len(errors) >= 3:
+            if len(errors) >= 20:
                 return errors
     return errors
 
@@ -237,14 +245,81 @@ def _unique_errors(rules: dict, rows: list[dict]) -> list[str]:
                 continue
             if value in seen:
                 errors.append(f"Row {row['_line']}: duplicated {column['header']}")
-                if len(errors) >= 3:
+                if len(errors) >= 20:
                     return errors
             else:
                 seen[value] = row["_line"]
     return errors
 
 
-_ISSUE_IN_NAME = re.compile(r"ISSUE[\s_\-]*(\d{1,2}|XX)\s*$", re.I)
+_LINE_KEYS = ("task_reference", "revision", "fin_position", "pn", "sn")
+
+
+def _joined(errors: list[str]) -> str:
+    return "\n".join(errors)
+
+
+def _fail_snap(row: dict) -> dict:
+    snap = {"line": row["_line"]}
+    for key, value in row.items():
+        if key != "_line":
+            snap[key] = value
+    return snap
+
+
+def _attach_fail_rows(ctx: Context, detail: str) -> None:
+    if not ctx.rows or not detail:
+        return
+    lines: set[int] = set()
+    for part in detail.split("\n"):
+        head = part.split(":", 1)[0]
+        if "row" not in head.lower():
+            continue
+        for match in re.finditer(r"\d+", head):
+            lines.add(int(match.group(0)))
+    seen = {item.get("line") for item in ctx.fail_rows}
+    for row in ctx.rows:
+        if row["_line"] in lines and row["_line"] not in seen:
+            ctx.fail_rows.append(_fail_snap(row))
+            seen.add(row["_line"])
+
+
+def _fail_detail(ctx: Context, errors: list[str], ok_msg: str) -> tuple[bool, str]:
+    if not errors:
+        return True, ok_msg
+    detail = _joined(errors)
+    _attach_fail_rows(ctx, detail)
+    return False, detail
+
+
+def _line_unique_errors(rows: list[dict], version: str | None) -> tuple[list[str], list[dict]]:
+    groups: dict[str, list[dict]] = {}
+    issue = version or "issue"
+    for row in rows:
+        if not (row.get("task_reference") or "").strip():
+            continue
+        flag = (row.get(issue) or "").strip().upper() if version else ""
+        value = " · ".join((row.get(key) or "").strip().upper() for key in _LINE_KEYS)
+        groups.setdefault(f"{issue}|{flag}|{value}", []).append(row)
+    errors: list[str] = []
+    fail_rows: list[dict] = []
+    for bunch in groups.values():
+        if len(bunch) < 2:
+            continue
+        sample = bunch[0]
+        listed = ", ".join(str(row["_line"]) for row in bunch)
+        flag = (sample.get(issue) or "—") if version else "—"
+        errors.append(
+            f"Rows {listed}: duplicated TASK REFERENCE={sample.get('task_reference') or '—'} · "
+            f"REVISION={sample.get('revision') or '—'} · FIN={sample.get('fin_position') or '—'} · "
+            f"PNR={sample.get('pn') or '—'} · SNR={sample.get('sn') or '—'} · {issue}={flag}"
+        )
+        for row in bunch:
+            fail_rows.append(_fail_snap(row))
+    return errors, fail_rows
+
+
+_FILE_VERSION = re.compile(r"(?<!\d)(\d{2}\.\d{2})(?!\d)")
 
 
 def _header_key(value: str) -> str:
@@ -261,23 +336,15 @@ def _sheet_headers(sheet: Worksheet, rules: dict) -> list[str]:
     return cells
 
 
-def _issue_from_last_column(headers: list[str]) -> int:
-    last = headers[-1] if headers else ""
-    match = _ISSUE_IN_NAME.search(_norm(last))
-    if not match:
-        found = last or "(empty)"
-        raise ValueError(f"Last column must contain Issue XX, found '{found}'")
-    token = match.group(1)
-    if token.upper() == "XX":
-        nums = [
-            int(vid[:2])
-            for name in headers[:-1]
-            if (vid := _version_id(name)) and vid.endswith(".00")
-        ]
-        if not nums:
-            raise ValueError("Last column is Issue XX but no NN.00 column was found")
-        return max(nums)
-    return int(token)
+def _version_from_filename(filename: str) -> str:
+    matches = _FILE_VERSION.findall(Path(filename).stem)
+    if not matches:
+        raise ValueError("Filename must contain XX.XX (two digits, a dot, two digits)")
+    return matches[-1]
+
+
+def fill_issue_label(label: str, version: str | None) -> str:
+    return label.replace("XX.XX", version) if version else label
 
 
 def run_check(check_id: str, ctx: Context) -> tuple[bool, str]:
@@ -299,32 +366,76 @@ def run_check(check_id: str, ctx: Context) -> tuple[bool, str]:
     if check_id == "workbook":
         try:
             ctx.book = _open_book(ctx.payload)
-            wanted = rules.get("sheet", {}).get("name")
-            if wanted:
-                if wanted not in ctx.book.sheetnames:
-                    return False, f"Sheet '{wanted}' was not found"
-                ctx.sheet = ctx.book[wanted]
-            else:
-                ctx.sheet = ctx.book.active
+            ctx.sheet = ctx.book.active
         except Exception as exc:  # noqa: BLE001
             return False, str(exc) or "The workbook could not be opened"
         return True, "Workbook opened"
+    if check_id == "sheet":
+        if ctx.book is None:
+            return False, "The workbook could not be opened"
+        wanted = str((rules.get("sheet") or {}).get("name") or "").strip()
+        if not wanted:
+            ctx.sheet = ctx.book.active
+            return True, "Sheet selected"
+        match = next((name for name in ctx.book.sheetnames if name.strip().upper() == wanted.upper()), None)
+        if match is None:
+            return False, f"Sheet '{wanted}' was not found"
+        ctx.sheet = ctx.book[match]
+        return True, f"Sheet {match} found"
     if check_id == "issue_name":
         try:
-            ctx.header_cells = _sheet_headers(ctx.sheet, rules)
-            ctx.issue_number = _issue_from_last_column(ctx.header_cells)
+            ctx.file_version = _version_from_filename(ctx.filename)
+            ctx.issue_number = int(ctx.file_version.split(".", 1)[0])
         except ValueError as exc:
             return False, str(exc)
-        return True, f"Last column is Issue {ctx.issue_number:02d}"
+        return True, f"Issue {ctx.file_version} has been detected"
     if check_id == "issue_version":
-        if ctx.issue_number is None:
-            return False, "Issue number was not found in the last column"
-        wanted = f"{ctx.issue_number:02d}.00"
+        if not ctx.file_version:
+            return False, "Filename must contain XX.XX"
+        try:
+            ctx.header_cells = _sheet_headers(ctx.sheet, rules)
+        except ValueError as exc:
+            return False, str(exc)
+        wanted = ctx.file_version
+        pattern = str((rules.get("issue_number") or {}).get("header_pattern") or r"^\d{2}\.\d{2}$")
+        if not re.match(pattern, wanted):
+            return False, f"Filename issue {wanted} does not match XX.XX"
         keys = {_header_key(name) for name in ctx.header_cells}
-        aliases = {_header_key(wanted), _header_key(f"{ctx.issue_number}.00")}
+        aliases = {_header_key(wanted), _header_key(f"{int(wanted.split('.', 1)[0])}.{wanted.split('.', 1)[1]}")}
         if not keys & aliases:
-            return False, f"Column {wanted} is required when the last column is Issue {ctx.issue_number:02d}"
-        return True, f"Column {wanted} matches Issue {ctx.issue_number:02d}"
+            return False, f"Column {wanted} was not found in PD-SUMMARY"
+        return True, f"Column {wanted} found"
+    if check_id == "issue_number":
+        spec = rules.get("issue_number") or {}
+        wanted = ctx.file_version
+        if not wanted:
+            return False, "Filename must contain XX.XX"
+        if not ctx.headers:
+            try:
+                ctx.headers = _map_headers(ctx.sheet, rules)
+            except Exception as exc:  # noqa: BLE001
+                return False, str(exc)
+        if not ctx.rows:
+            try:
+                ctx.rows = _read_rows(ctx.sheet, rules, ctx.headers)
+            except Exception as exc:  # noqa: BLE001
+                return False, str(exc)
+        col = next((key for key in (ctx.rows[0] if ctx.rows else {}) if _version_id(key) == wanted), None)
+        if col is None:
+            return False, f"Column {wanted} was not found in PD-SUMMARY"
+        allowed = [str(item) for item in spec.get("enum") or ["Y", "OUT", "UNDER REVIEW"]]
+        allowed_norm = {item.upper() for item in allowed}
+        for row in ctx.rows:
+            value = (row.get(col) or "").strip()
+            if not spec.get("allow_empty", False) and not value:
+                detail = f"Row {row['_line']}: {wanted} is empty"
+                _attach_fail_rows(ctx, detail)
+                return False, detail
+            if value and value.upper() not in allowed_norm:
+                detail = f"Row {row['_line']}: {wanted} must be {' / '.join(allowed)}"
+                _attach_fail_rows(ctx, detail)
+                return False, detail
+        return True, f"Column {wanted} values are valid"
     if check_id == "headers":
         try:
             ctx.headers = _map_headers(ctx.sheet, rules)
@@ -337,41 +448,36 @@ def run_check(check_id: str, ctx: Context) -> tuple[bool, str]:
         except Exception as exc:  # noqa: BLE001
             return False, str(exc)
         errors = _empty_errors(rules, ctx.rows)
-        return (False, errors[0]) if errors else (True, "No empty required cells")
+        return _fail_detail(ctx, errors, "No empty required cells")
     if check_id == "values":
-        errors = _value_errors(rules, ctx.rows)
-        return (False, errors[0]) if errors else (True, "Column formats are valid")
+        return _fail_detail(ctx, _value_errors(rules, ctx.rows), "Column formats are valid")
     if check_id == "flags":
-        errors = _flag_errors(rules, ctx.rows)
-        return (False, errors[0]) if errors else (True, "Flags are sequential")
+        return _fail_detail(ctx, _flag_errors(rules, ctx.rows), "Flags are sequential")
     if check_id == "unique":
-        errors = _unique_errors(rules, ctx.rows)
-        return (False, errors[0]) if errors else (True, "References are unique")
+        return _fail_detail(ctx, _unique_errors(rules, ctx.rows), "References are unique")
+    if check_id == "unique_line":
+        errors, fail_rows = _line_unique_errors(ctx.rows, ctx.file_version)
+        seen = {item.get("line") for item in ctx.fail_rows}
+        for snap in fail_rows:
+            if snap.get("line") not in seen:
+                ctx.fail_rows.append(snap)
+                seen.add(snap.get("line"))
+        return (False, _joined(errors)) if errors else (True, f"No duplicated lines on issue {ctx.file_version or 'XX.XX'}")
     if check_id == "store":
+        if ctx.failed:
+            return False, "Not stored because other checks failed"
         return (True, "Ready to store") if ctx.rows else (False, "No rows to store")
     return False, f"Unknown check {check_id}"
 
 
 def to_pd_rows(rows: list[dict], rules: dict) -> tuple[list[str], list[dict]]:
     versions = _version_ids(rules, rows)
+    ids = [column["id"] for column in rules["columns"]]
     parsed = []
     for row in rows:
-        parsed.append(
-            {
-                "item_ref": row["item_ref"],
-                "reference": row["reference"],
-                "revision": row["revision"],
-                "ata": row["ata"],
-                "description": row.get("description") or row.get("title") or "",
-                "type": row.get("type") or "",
-                "source_material": row.get("source_material") or "",
-                "source_hours": row.get("source_hours") or "",
-                "fin_position": row.get("fin_position") or "",
-                "pn": row.get("pn") or "",
-                "sn": row.get("sn") or "",
-                "flags": {col: row[col] for col in versions},
-            }
-        )
+        item = {col: row.get(col) or "" for col in ids}
+        item["flags"] = {col: row.get(col) or "" for col in versions}
+        parsed.append(item)
     return versions, parsed
 
 
@@ -384,18 +490,15 @@ def write_sample_workbook(path: Path, rows: list[dict]) -> None:
     rules = load_rules("pd")
     book = Workbook()
     sheet = book.active
-    sheet.title = "PD"
+    sheet.title = str((rules.get("sheet") or {}).get("name") or "PD-SUMMARY")
     versions = list(rows[0]["flags"].keys()) if rows else []
     columns = list(rules["columns"])
-    issue_n = max((int(col[:2]) for col in versions if col.endswith(".00")), default=1)
-    issue_header = f"Issue {issue_n:02d}"
-    sheet.append([column["header"] for column in columns] + versions + [issue_header])
+    sheet.append([column["header"] for column in columns] + versions)
     for cell in sheet[1]:
         cell.number_format = "@"
     for row in rows:
         line = [row.get(column["id"], "") for column in columns]
         line.extend(row["flags"][col] for col in versions)
-        line.append("")
         sheet.append(line)
     path.parent.mkdir(parents=True, exist_ok=True)
     book.save(path)

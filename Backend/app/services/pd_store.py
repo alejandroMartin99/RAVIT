@@ -10,7 +10,7 @@ from fastapi import HTTPException
 from fastapi.responses import FileResponse
 
 from app.services.aircraft_store import get_aircraft
-from app.services.source_validation import Context, load_rules, run_check, to_pd_rows
+from app.services.source_validation import Context, fill_issue_label, load_rules, run_check, to_pd_rows, _version_from_filename
 
 _ISSUE_RE = re.compile(r"^issue(\d{2})$")
 
@@ -246,6 +246,15 @@ def _write_history(folder: str, attempts: list[dict]) -> None:
     _history_path(folder).write_text(json.dumps({"attempts": attempts}, indent=2), encoding="utf-8")
 
 
+def _next_attempt_id(attempts: list[dict]) -> str:
+    nums = []
+    for item in attempts:
+        match = re.match(r"a(\d+)$", str(item.get("id") or ""))
+        if match:
+            nums.append(int(match.group(1)))
+    return f"a{(max(nums) if nums else 0) + 1:03d}"
+
+
 def _record_attempt(
     aircraft,
     *,
@@ -256,9 +265,10 @@ def _record_attempt(
     issue: str | None = None,
     number: int | None = None,
     rows: int = 0,
+    fail_rows: list | None = None,
 ) -> dict:
     attempts = _load_history(aircraft)
-    attempt_id = f"a{len(attempts) + 1:03d}"
+    attempt_id = _next_attempt_id(attempts)
     ext = Path(filename).suffix.lower() or ".xlsx"
     (_uploads_dir(aircraft.folder) / f"{attempt_id}{ext}").write_bytes(source)
     entry = {
@@ -271,6 +281,7 @@ def _record_attempt(
         "uploaded_at": _now(),
         "uploaded_by": aircraft.chief,
         "rows": rows,
+        "fail_rows": fail_rows or [],
     }
     attempts.append(entry)
     _write_history(aircraft.folder, attempts)
@@ -390,25 +401,150 @@ def _align_flags(flags: dict[str, str], versions: list[str]) -> dict[str, str]:
         value = flags.get(col)
         if locked:
             out[col] = "OUT"
-        elif value in {"Y", "OUT"}:
+        elif value in {"Y", "OUT", "UNDER REVIEW"}:
             out[col] = value
             locked = value == "OUT"
         else:
-            out[col] = "Y"
+            out[col] = value or "Y"
     return out
 
 
-def save_issue(aircraft_id: str, versions: list[str], rows: list[dict], filename: str, source: bytes) -> dict:
+def _pending_dir(folder: str) -> Path:
+    path = _pd_dir(folder) / "pending"
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def _issue_matches_version(data: dict, path: Path, version: str) -> bool:
+    if data.get("version") == version or data.get("issue") == version or path.stem == version:
+        return True
+    major = int(version.split(".", 1)[0])
+    if version.endswith(".00") and path.stem == f"issue{major:02d}":
+        return True
+    source = Path(str(data.get("source_file") or "")).stem
+    return version in source
+
+
+def find_issue_by_version(aircraft_id: str, version: str) -> dict | None:
     aircraft = get_aircraft(aircraft_id)
-    listed = list_issues(aircraft_id)
-    number = (listed["issues"][-1]["number"] + 1) if listed["issues"] else 1
+    folder = _pd_dir(aircraft.folder)
+    for path in folder.glob("*.json"):
+        if path.name == "history.json":
+            continue
+        data = _parse(path)
+        if _issue_matches_version(data, path, version):
+            return data
+    for item in _load_history(aircraft):
+        if item.get("status") != "ok":
+            continue
+        issue = item.get("issue")
+        if not issue:
+            continue
+        path = folder / f"{issue}.json"
+        if path.exists() and _issue_matches_version(_parse(path), path, version):
+            return _parse(path)
+        if item.get("version") == version or issue == version:
+            return {"issue": issue, "version": version}
+    return None
+
+
+def _purge_version(aircraft, version: str) -> None:
+    folder = _pd_dir(aircraft.folder)
+    uploads = _uploads_dir(aircraft.folder)
+    attempts = _load_history(aircraft)
+    drop_ids: set[str] = set()
+    for path in list(folder.glob("*.json")):
+        if path.name == "history.json":
+            continue
+        data = _parse(path)
+        if not _issue_matches_version(data, path, version):
+            continue
+        stem = path.stem
+        for extra in folder.glob(f"{stem}.*"):
+            extra.unlink(missing_ok=True)
+    kept = []
+    for item in attempts:
+        same = item.get("status") == "ok" and (
+            item.get("version") == version
+            or item.get("issue") == version
+            or version in Path(str(item.get("source_file") or "")).stem
+        )
+        if same:
+            drop_ids.add(str(item.get("id") or ""))
+            continue
+        kept.append(item)
+    for attempt_id in drop_ids:
+        for path in uploads.glob(f"{attempt_id}.*"):
+            path.unlink(missing_ok=True)
+    _write_history(aircraft.folder, kept)
+
+
+def stash_pending(aircraft_id: str, version: str, filename: str, source: bytes, versions: list[str], rows: list[dict]) -> None:
+    aircraft = get_aircraft(aircraft_id)
+    pending = _pending_dir(aircraft.folder)
+    ext = Path(filename).suffix.lower() or ".xlsx"
+    (pending / f"{version}{ext}").write_bytes(source)
+    (pending / f"{version}.json").write_text(
+        json.dumps({"filename": filename, "versions": versions, "rows": rows}, indent=2),
+        encoding="utf-8",
+    )
+
+
+def discard_pending(aircraft_id: str, version: str) -> dict:
+    aircraft = get_aircraft(aircraft_id)
+    pending = _pending_dir(aircraft.folder)
+    for path in pending.glob(f"{version}.*"):
+        path.unlink(missing_ok=True)
+    return {"ok": True}
+
+
+def commit_pending(aircraft_id: str, version: str) -> dict:
+    aircraft = get_aircraft(aircraft_id)
+    pending = _pending_dir(aircraft.folder)
+    meta_path = pending / f"{version}.json"
+    if not meta_path.exists():
+        raise HTTPException(status_code=404, detail="No validated PD waiting to replace")
+    meta = _parse(meta_path)
+    filename = meta.get("filename") or f"Issue {version}.xlsx"
+    source_path = next((path for path in pending.glob(f"{version}.*") if path.suffix.lower() != ".json"), None)
+    if not source_path:
+        raise HTTPException(status_code=404, detail="No validated PD waiting to replace")
+    source = source_path.read_bytes()
+    _purge_version(aircraft, version)
+    issue = save_issue(aircraft_id, meta.get("versions") or [], meta.get("rows") or [], filename, source, version)
+    _record_attempt(
+        aircraft,
+        status="ok",
+        filename=filename,
+        source=source,
+        issue=issue["issue"],
+        number=issue["number"],
+        rows=len(issue.get("rows") or []),
+    )
+    discard_pending(aircraft_id, version)
+    return issue
+
+
+def save_issue(
+    aircraft_id: str,
+    versions: list[str],
+    rows: list[dict],
+    filename: str,
+    source: bytes,
+    version: str,
+) -> dict:
+    aircraft = get_aircraft(aircraft_id)
+    existing = find_issue_by_version(aircraft_id, version)
+    number = int(version.split(".", 1)[0])
+    issue_id = version
     aligned = []
     for row in rows:
         item = dict(row)
         item["flags"] = _align_flags(row.get("flags") or {}, versions)
         aligned.append(item)
     payload = {
-        "issue": _issue_name(number),
+        "issue": issue_id,
+        "version": version,
         "number": number,
         "versions": versions,
         "rows": aligned,
@@ -417,9 +553,14 @@ def save_issue(aircraft_id: str, versions: list[str], rows: list[dict], filename
         "uploaded_by": aircraft.chief,
     }
     folder = _pd_dir(aircraft.folder)
-    (folder / f"{payload['issue']}.json").write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    if existing:
+        old = existing.get("issue")
+        if old and old != issue_id:
+            for path in folder.glob(f"{old}.*"):
+                path.unlink(missing_ok=True)
+    (folder / f"{issue_id}.json").write_text(json.dumps(payload, indent=2), encoding="utf-8")
     ext = Path(filename).suffix.lower() or ".xlsx"
-    (folder / f"{payload['issue']}{ext}").write_bytes(source)
+    (folder / f"{issue_id}{ext}").write_bytes(source)
     return payload
 
 
@@ -427,54 +568,108 @@ def _sse(payload: dict) -> str:
     return f"data: {json.dumps(payload)}\n\n"
 
 
-async def ingest_events(aircraft_id: str, filename: str, payload: bytes) -> AsyncIterator[str]:
+async def ingest_events(aircraft_id: str, filename: str, payload: bytes, replace: bool = False) -> AsyncIterator[str]:
     rules = load_rules("pd")
     ctx = Context(filename=filename, payload=payload, rules=rules)
+    try:
+        ctx.file_version = _version_from_filename(filename)
+        ctx.issue_number = int(ctx.file_version.split(".", 1)[0])
+    except ValueError:
+        ctx.file_version = None
     checks = rules["checks"]
-    total = len(checks)
+    shown = [check for check in checks if not check.get("silent")]
+    total = len(shown) or len(checks)
+    done = 0
     yield _sse(
         {
             "kind": "plan",
             "percent": 0,
-            "checks": [{"id": check["id"], "label": check["label"]} for check in checks],
+            "checks": [{"id": check["id"], "label": fill_issue_label(check["label"], ctx.file_version)} for check in shown],
         }
     )
-    for index, check in enumerate(checks, start=1):
-        yield _sse(
-            {
-                "kind": "step",
-                "id": check["id"],
-                "label": check["label"],
-                "status": "running",
-                "percent": int((index - 1) / total * 100),
-            }
-        )
-        await asyncio.sleep(0.45)
-        ok, detail = run_check(check["id"], ctx)
-        percent = int(index / total * 100)
-        yield _sse(
-            {
-                "kind": "step",
-                "id": check["id"],
-                "label": check["label"],
-                "status": "ok" if ok else "fail",
-                "detail": detail,
-                "percent": percent,
-            }
-        )
-        if not ok:
-            aircraft = get_aircraft(aircraft_id)
-            _record_attempt(
-                aircraft,
-                status="fail",
-                filename=filename,
-                source=payload,
-                message=detail,
+    fails: list[str] = []
+    for check in checks:
+        if check["id"] == "store" and ctx.failed:
+            continue
+        label = fill_issue_label(check["label"], ctx.file_version)
+        silent = bool(check.get("silent"))
+        if not silent:
+            yield _sse(
+                {
+                    "kind": "step",
+                    "id": check["id"],
+                    "label": label,
+                    "status": "running",
+                    "percent": int(done / total * 100),
+                }
             )
-            yield _sse({"kind": "error", "message": detail, "percent": percent})
-            return
-    versions, rows = to_pd_rows(ctx.rows, rules)
-    issue = save_issue(aircraft_id, versions, rows, filename, payload)
+            await asyncio.sleep(0.45)
+        ok, detail = run_check(check["id"], ctx)
+        if not silent:
+            done += 1
+        percent = int(done / total * 100)
+        if not ok:
+            ctx.failed = True
+            fails.append(detail)
+        if not silent or not ok:
+            yield _sse(
+                {
+                    "kind": "step",
+                    "id": check["id"],
+                    "label": label,
+                    "status": "ok" if ok else "fail",
+                    "detail": detail,
+                    "percent": percent,
+                    "rows": ctx.fail_rows,
+                }
+            )
+    if fails:
+        message = "\n\n".join(fails)
+        _record_attempt(
+            get_aircraft(aircraft_id),
+            status="fail",
+            filename=filename,
+            source=payload,
+            message=message,
+            fail_rows=ctx.fail_rows,
+        )
+        yield _sse({"kind": "error", "message": message, "percent": 100, "rows": ctx.fail_rows})
+        return
+    version = ctx.file_version
+    if not version:
+        detail = "Filename must contain XX.XX"
+        _record_attempt(get_aircraft(aircraft_id), status="fail", filename=filename, source=payload, message=detail)
+        yield _sse({"kind": "error", "message": detail, "percent": 100})
+        return
+    existing = find_issue_by_version(aircraft_id, version)
+    try:
+        versions, rows = to_pd_rows(ctx.rows, rules)
+    except Exception as exc:  # noqa: BLE001
+        _record_attempt(
+            get_aircraft(aircraft_id),
+            status="fail",
+            filename=filename,
+            source=payload,
+            message=str(exc) or "Could not store the Program Directive",
+        )
+        yield _sse({"kind": "error", "message": str(exc) or "Could not store the Program Directive", "percent": 100})
+        return
+    if existing:
+        stash_pending(aircraft_id, version, filename, payload, versions, rows)
+        yield _sse({"kind": "replace", "version": version, "percent": 100})
+        return
+    try:
+        issue = save_issue(aircraft_id, versions, rows, filename, payload, version)
+    except Exception as exc:  # noqa: BLE001
+        _record_attempt(
+            get_aircraft(aircraft_id),
+            status="fail",
+            filename=filename,
+            source=payload,
+            message=str(exc) or "Could not store the Program Directive",
+        )
+        yield _sse({"kind": "error", "message": str(exc) or "Could not store the Program Directive", "percent": 100})
+        return
     _record_attempt(
         get_aircraft(aircraft_id),
         status="ok",

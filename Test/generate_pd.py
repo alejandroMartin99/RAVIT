@@ -28,11 +28,11 @@ ROWS = [
 ]
 
 
-def save(name: str, headers: list, rows: list[list]) -> None:
+def save(name: str, headers: list, rows: list[list], sheet_name: str = "PD-SUMMARY") -> None:
     ROOT.mkdir(parents=True, exist_ok=True)
     book = Workbook()
     sheet = book.active
-    sheet.title = "PD"
+    sheet.title = sheet_name
     sheet.append(headers)
     for cell in sheet[1]:
         cell.number_format = "@"
@@ -42,14 +42,18 @@ def save(name: str, headers: list, rows: list[list]) -> None:
 
 
 def ok_issue(number: int, versions: list[str], flags: list[list[str]]) -> None:
-    issue = f"Issue {number:02d}"
-    headers = [*HEADERS, *versions, issue]
-    rows = [row + flag + [""] for row, flag in zip(ROWS, flags, strict=True)]
-    save(f"ok-issue{number:02d}.xlsx", headers, rows)
+    headers = [*HEADERS, *versions]
+    rows = [row + flag for row, flag in zip(ROWS, flags, strict=True)]
+    save(f"ok-issue-{number:02d}.00.xlsx", headers, rows)
 
 
-def fail(name: str, headers: list, rows: list[list]) -> None:
-    save(name, headers, rows)
+ROOT.mkdir(parents=True, exist_ok=True)
+for stale in ROOT.glob("*.xlsx"):
+    stale.unlink()
+
+
+def fail(name: str, headers: list, rows: list[list], sheet_name: str = "PD-SUMMARY") -> None:
+    save(name, headers, rows, sheet_name=sheet_name)
 
 
 ok_issue(
@@ -89,43 +93,50 @@ ok_issue(
 )
 
 fail(
+    "fail-sheet.xlsx",
+    [*HEADERS, "01.00"],
+    [row + ["Y"] for row in ROWS],
+    sheet_name="PD",
+)
+
+fail(
     "fail-issue-name.xlsx",
-    [*HEADERS, "01.00", "Version"],
-    [row + ["Y", ""] for row in ROWS],
+    [*HEADERS, "01.00"],
+    [row + ["Y"] for row in ROWS],
 )
 
 fail(
-    "fail-issue-version.xlsx",
-    [*HEADERS, "00.10", "01.00", "Issue 02"],
-    [row + ["Y", "Y", ""] for row in ROWS],
+    "fail-issue-version-02.00.xlsx",
+    [*HEADERS, "00.10", "01.00"],
+    [row + ["Y", "Y"] for row in ROWS],
 )
 
 fail(
-    "fail-headers.xlsx",
-    [h for h in HEADERS if h != "TYPE"] + ["01.00", "Issue 01"],
-    [row[:5] + row[6:] + ["Y", ""] for row in ROWS],
+    "fail-headers-01.00.xlsx",
+    [h for h in HEADERS if h != "TYPE"] + ["01.00"],
+    [row[:5] + row[6:] + ["Y"] for row in ROWS],
 )
 
 empty_rows = deepcopy(ROWS)
 empty_rows[0][4] = ""
-fail("fail-empty.xlsx", [*HEADERS, "01.00", "Issue 01"], [row + ["Y", ""] for row in empty_rows])
+fail("fail-empty-01.00.xlsx", [*HEADERS, "01.00"], [row + ["Y"] for row in empty_rows])
 
 bad_rows = deepcopy(ROWS)
 bad_rows[0][1] = "PD-21-110-001"
 bad_rows[1][5] = "SB"
 bad_rows[2][2] = "1"
 bad_rows[3][7] = "two"
-fail("fail-values.xlsx", [*HEADERS, "01.00", "Issue 01"], [row + ["Y", ""] for row in bad_rows])
+fail("fail-values-01.00.xlsx", [*HEADERS, "01.00"], [row + ["Y"] for row in bad_rows])
 
 fail(
-    "fail-flags.xlsx",
-    [*HEADERS, "00.10", "01.00", "Issue 01"],
+    "fail-flags-01.00.xlsx",
+    [*HEADERS, "00.10", "01.00"],
     [
-        ROWS[0] + ["OUT", "Y", ""],
-        ROWS[1] + ["Y", "Y", ""],
-        ROWS[2] + ["Y", "OUT", ""],
-        ROWS[3] + ["Y", "Y", ""],
-        ROWS[4] + ["Y", "Y", ""],
+        ROWS[0] + ["OUT", "Y"],
+        ROWS[1] + ["Y", "Y"],
+        ROWS[2] + ["Y", "OUT"],
+        ROWS[3] + ["Y", "Y"],
+        ROWS[4] + ["Y", "Y"],
     ],
 )
 
@@ -133,6 +144,6 @@ dup_rows = deepcopy(ROWS)
 dup_rows[1][0] = "1.1"
 dup_rows[2][1] = "A400M-PD-21-110-001"
 dup_rows[2][2] = "N/A"
-fail("fail-unique.xlsx", [*HEADERS, "01.00", "Issue 01"], [row + ["Y", ""] for row in dup_rows])
+fail("fail-unique-01.00.xlsx", [*HEADERS, "01.00"], [row + ["Y"] for row in dup_rows])
 
 print("Wrote", len(list(ROOT.glob("*.xlsx"))), "files in", ROOT)

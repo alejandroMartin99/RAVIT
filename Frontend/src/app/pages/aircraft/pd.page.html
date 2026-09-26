@@ -6,6 +6,31 @@
       <div class="mod-title">
         <h1>{{ title() }}</h1>
         <app-ui-help [topic]="helpTopic()" />
+        @if (!ingest() && issues().length) {
+          <div class="pick" [class.is-open]="issueOpen()" (click)="$event.stopPropagation()">
+            <button type="button" class="pick-btn" (click)="toggleIssues()">
+              <span>
+                <span class="pick-kicker">Issue</span>
+                <span class="pick-val">{{ issueLabel(selected()) }}</span>
+              </span>
+              <span class="pick-chev" aria-hidden="true"></span>
+            </button>
+            @if (issueOpen()) {
+              <ul class="pick-list">
+                @for (item of issues(); track item.id) {
+                  <li>
+                    <button type="button" [class.is-on]="item.issue === selected()" (click)="selectIssue(item.issue || item.id)">
+                      <span>{{ issueLabel(item) }}</span>
+                      @if (item.current) {
+                        <span class="tag">Current</span>
+                      }
+                    </button>
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+        }
       </div>
     </div>
   </header>
@@ -53,16 +78,31 @@
               [class.st-fail]="item.status === 'fail'"
             >
               <span class="mark" aria-hidden="true"></span>
-              <span>{{ item.label }}</span>
+              <span>
+                {{ item.label }}
+                @if (item.status === 'fail' && item.detail) {
+                  <small class="fail-lines">{{ item.detail }}</small>
+                }
+              </span>
             </li>
           }
         </ul>
+        @if (failRows().length) {
+          <p class="step">Failing Excel rows</p>
+          <app-ui-table
+            fit="content"
+            [columns]="failColsFor(failRows())"
+            [rows]="failRows()"
+            [framed]="false"
+            [trackBy]="trackFailRow"
+          />
+        }
       </div>
     </article>
   }
 
   @if (ingest()) {
-    @if (history().length && !uploading()) {
+    @if (history().length) {
       <div class="toolbar">
         <p class="hint tight">History of every PD upload for this aircraft. Failed files stay listed. The last successful issue is current.</p>
         <button type="button" class="go" (click)="openPicker()">Upload next issue</button>
@@ -74,13 +114,30 @@
         initialDir="desc"
         [trackBy]="trackHistory"
         [rowClass]="historyRowClass"
+        [canExpand]="historyCanExpand"
       >
+        <ng-template uiTableExpand let-item>
+          <div class="fail-panel">
+            @if (item.message) {
+              <p class="fail-summary">{{ item.message }}</p>
+            }
+            @if (item.fail_rows?.length) {
+              <app-ui-table
+                fit="content"
+                [columns]="failColsFor(item.fail_rows)"
+                [rows]="item.fail_rows"
+                [framed]="false"
+                [trackBy]="trackFailRow"
+              />
+            }
+          </div>
+        </ng-template>
         <ng-template uiTableCell="note" let-item>
           @if (item.current) {
             <span class="tag">Current</span>
           }
-          @if (item.status === 'fail' && item.message) {
-            <span class="fail-msg">{{ item.message }}</span>
+          @if (item.status === 'fail') {
+            <span class="fail-msg">{{ failNote(item) }}</span>
           }
         </ng-template>
         <ng-template uiTableCell="actions" let-item>
@@ -139,78 +196,54 @@
       </article>
     }
   } @else {
-    @if (issues().length) {
-    <div class="toolbar">
-      <div class="pick" [class.is-open]="issueOpen()" (click)="$event.stopPropagation()">
-        <button type="button" class="pick-btn" (click)="toggleIssues()">
-          <span>
-            <span class="pick-kicker">Issue</span>
-            <span class="pick-val">{{ issueLabel(selected()) }}</span>
-          </span>
-          <span class="pick-chev" aria-hidden="true"></span>
-        </button>
-        @if (issueOpen()) {
-          <ul class="pick-list">
-            @for (item of issues(); track item.id) {
-              <li>
-                <button type="button" [class.is-on]="item.issue === selected()" (click)="selectIssue(item.issue || item.id)">
-                    <span>{{ issueLabel(item) }}</span>
-                  @if (item.current) {
-                    <span class="tag">Current</span>
-                  }
-                </button>
-              </li>
-            }
-          </ul>
-        }
-      </div>
-    </div>
-    }
     @if (loading()) {
-    <div class="sheet is-skel" aria-busy="true" aria-live="polite">
-      <table class="grid">
-        <thead>
-          <tr>
-            @for (col of skelCols(); track col.id) {
-              <th [class.flag-col]="col.id.startsWith('flag:')">
-                <span class="skel skel-head">{{ col.label }}</span>
-              </th>
-            }
-          </tr>
-        </thead>
-        <tbody>
-          @for (row of skelRows; track row; let r = $index) {
+      <div class="sheet is-skel" aria-busy="true" aria-live="polite">
+        <table class="grid">
+          <thead>
             <tr>
-              @for (col of skelCols(); track col.id; let c = $index) {
-                <td [class.flag-col]="col.id.startsWith('flag:')">
-                  <span
-                    class="skel"
-                    [class.skel-chip]="col.id.startsWith('flag:')"
-                    [class.skel-lg]="col.id === 'description' || col.id === 'source_material'"
-                    [class.skel-sm]="col.id === 'revision' || col.id === 'ata' || col.id === 'source_hours' || col.id === 'pn' || col.id === 'sn'"
-                    [style.animation-delay]="r * 45 + c * 22 + 'ms'"
-                  ></span>
-                </td>
+              @for (col of skelCols(); track col.id) {
+                <th>
+                  <span class="skel skel-head">{{ col.label }}</span>
+                </th>
               }
             </tr>
-          }
-        </tbody>
-      </table>
-    </div>
-    } @else {
-      @if (issue(); as pd) {
-    <app-ui-table [columns]="pdCols()" [rows]="pd.rows" [trackBy]="trackRow" />
-      } @else {
-    <article class="empty">
-      <p class="step">No Program Directive loaded</p>
-      <h2>Upload a PD source for this aircraft</h2>
-      <p class="hint">Production shows the current issue. Upload starts in R.D.G. Source ingestion.</p>
-      <a class="go" [routerLink]="ingestPath()">Upload a PD</a>
-    </article>
+          </thead>
+          <tbody>
+            @for (row of skelRows; track row; let r = $index) {
+              <tr>
+                @for (col of skelCols(); track col.id; let c = $index) {
+                  <td>
+                    <span class="skel" [style.animation-delay]="r * 45 + c * 22 + 'ms'"></span>
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else if (issue()) {
+      <app-ui-table [columns]="pdCols()" [rows]="issue()!.rows" [trackBy]="trackRow" />
+    } @else if (!loading()) {
+      <article class="empty">
+        <p class="step">No Program Directive loaded</p>
+        <h2>Upload a PD source for this aircraft</h2>
+        <p class="hint">Production shows the current issue. Upload starts in R.D.G. Source ingestion.</p>
+        <a class="go" [routerLink]="ingestPath()">Upload a PD</a>
+      </article>
     }
   }
-  }
 </section>
+
+@if (pendingReplace(); as version) {
+  <app-ui-modal [open]="true" title="Replace Program Directive" (closed)="cancelReplace()">
+    <p class="hint">A PD for issue {{ version }} already exists. Only one file is kept for that issue.</p>
+    <p class="hint tight">Replace the current issue {{ version }} with this upload?</p>
+    <div class="actions">
+      <app-ui-button variant="ghost" (click)="cancelReplace()">Cancel</app-ui-button>
+      <app-ui-button (click)="confirmReplace()">Replace</app-ui-button>
+    </div>
+  </app-ui-modal>
+}
 
 @if (pendingDelete(); as item) {
   <app-ui-modal [open]="true" title="Remove upload" (closed)="closeDelete()">
