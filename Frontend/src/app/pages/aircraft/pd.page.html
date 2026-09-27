@@ -5,14 +5,10 @@
       <p class="kicker">{{ code() }}</p>
       <div class="mod-title">
         <h1>{{ title() }}</h1>
-        <app-ui-help [topic]="helpTopic()" />
         @if (!ingest() && issues().length) {
           <div class="pick" [class.is-open]="issueOpen()" (click)="$event.stopPropagation()">
             <button type="button" class="pick-btn" (click)="toggleIssues()">
-              <span>
-                <span class="pick-kicker">Issue</span>
-                <span class="pick-val">{{ issueLabel(selected()) }}</span>
-              </span>
+              <span class="pick-val">{{ issueCode(selected()) }}</span>
               <span class="pick-chev" aria-hidden="true"></span>
             </button>
             @if (issueOpen()) {
@@ -20,7 +16,7 @@
                 @for (item of issues(); track item.id) {
                   <li>
                     <button type="button" [class.is-on]="item.issue === selected()" (click)="selectIssue(item.issue || item.id)">
-                      <span>{{ issueLabel(item) }}</span>
+                      <span>{{ issueCode(item) }}</span>
                       @if (item.current) {
                         <span class="tag">Current</span>
                       }
@@ -30,9 +26,49 @@
               </ul>
             }
           </div>
+          <div class="col-chips">
+            <button
+              type="button"
+              class="col-chip"
+              [class.is-on]="allIssues()"
+              (click)="toggleAllIssues(); $event.stopPropagation()"
+            >
+              All issues
+            </button>
+            <button
+              type="button"
+              class="col-chip"
+              [class.is-on]="mainColumns()"
+              (click)="toggleMainColumns(); $event.stopPropagation()"
+            >
+              Main columns
+            </button>
+            <div class="col-pick" [class.is-open]="colsOpen()" (click)="$event.stopPropagation()">
+              <button type="button" class="col-plus" aria-label="Columns" (click)="toggleCols()">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path fill="currentColor" d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z" />
+                </svg>
+              </button>
+              @if (colsOpen()) {
+                <ul class="pick-list">
+                  @for (col of colChoices(); track col.id) {
+                    <li>
+                      <button type="button" [class.is-on]="colOn(col.id)" (click)="toggleCol(col.id)">
+                        <span>{{ col.label }}</span>
+                        @if (colOn(col.id)) {
+                          <span class="col-check" aria-hidden="true"></span>
+                        }
+                      </button>
+                    </li>
+                  }
+                </ul>
+              }
+            </div>
+          </div>
         }
       </div>
     </div>
+    <app-ui-help class="mod-help" [topic]="helpTopic()" />
   </header>
 
   @if (error(); as message) {

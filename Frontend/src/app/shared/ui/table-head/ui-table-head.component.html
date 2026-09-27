@@ -23,7 +23,8 @@
       <input
         type="search"
         [ngModel]="query()"
-        (ngModelChange)="query.set($event)"
+        (ngModelChange)="onQuery($event)"
+        (keydown.enter)="onQueryEnter()"
         placeholder="Search values…"
       >
       <div class="list">

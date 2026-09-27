@@ -36,6 +36,18 @@ svg {
   border-radius: 11px;
 }
 
+:host-context(.leaf) {
+  width: 1.85rem;
+  height: 1.85rem;
+  border-radius: 7px;
+  background: transparent;
+}
+
+:host-context(.leaf) svg {
+  width: 1.05rem;
+  height: 1.05rem;
+}
+
 :host-context(.sub) {
   width: 1.85rem;
   height: 1.85rem;

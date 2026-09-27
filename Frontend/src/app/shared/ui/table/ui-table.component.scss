@@ -7,6 +7,24 @@
   --table-max-h: min(22rem, 40vh);
 }
 
+:host.is-card {
+  --table-max-h: min(46vh, 28rem);
+  max-width: 100%;
+  min-width: 0;
+}
+
+:host.is-card .sheet {
+  max-width: 100%;
+}
+
+:host.is-card .grid {
+  width: 100%;
+}
+
+:host.is-card .grid th {
+  min-width: 0;
+}
+
 .sheet {
   max-height: var(--table-max-h);
   overflow: auto;

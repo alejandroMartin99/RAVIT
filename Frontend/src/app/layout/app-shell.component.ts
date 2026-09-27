@@ -40,7 +40,9 @@ export class AppShellComponent {
       () => {
         this.url();
         this.expandedId.set(null);
-        this.sidebarOpen.set(false);
+        if (typeof window !== 'undefined' && window.innerWidth < 860) {
+          this.sidebarOpen.set(false);
+        }
       },
       { allowSignalWrites: true },
     );
@@ -149,17 +151,6 @@ export class AppShellComponent {
   toggleSidebar(event: Event): void {
     event.stopPropagation();
     this.sidebarOpen.update((open) => !open);
-  }
-
-  onBarClick(event: Event): void {
-    if (!this.sidebarOpen()) {
-      return;
-    }
-    const target = event.target as HTMLElement;
-    if (target.closest('.burger')) {
-      return;
-    }
-    this.closeSidebar();
   }
 
   @HostListener('document:keydown.escape')

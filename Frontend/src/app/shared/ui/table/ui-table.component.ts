@@ -11,7 +11,10 @@ import { UiTableColumn } from './ui-table.column';
   imports: [NgClass, NgTemplateOutlet, UiTableHeadComponent],
   templateUrl: './ui-table.component.html',
   styleUrl: './ui-table.component.scss',
-  host: { '[class.is-fit]': 'fit() === "content"' },
+  host: {
+    '[class.is-fit]': 'fit() === "content"',
+    '[class.is-card]': 'variant() === "card"',
+  },
 })
 export class UiTableComponent<T = unknown> {
   readonly columns = input.required<UiTableColumn<T>[]>();
@@ -20,6 +23,7 @@ export class UiTableComponent<T = unknown> {
   readonly empty = input('No rows match these filters.');
   readonly framed = input(true);
   readonly fit = input<'fill' | 'content'>('fill');
+  readonly variant = input<'data' | 'card'>('data');
   readonly rowClickable = input(false);
   readonly initialSort = input<string | null>(null);
   readonly initialDir = input<'asc' | 'desc'>('asc');

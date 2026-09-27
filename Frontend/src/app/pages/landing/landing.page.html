@@ -26,6 +26,7 @@
       <p class="muted">Loading fleet…</p>
     } @else {
       <app-ui-table
+        variant="card"
         [columns]="fleetCols()"
         [rows]="fleet()"
         [search]="query()"

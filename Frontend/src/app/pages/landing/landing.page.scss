@@ -1,13 +1,18 @@
 :host {
   display: block;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .landing {
   position: relative;
   display: grid;
   place-items: center;
-  min-height: calc(100vh - 4.4rem);
-  padding: 2.5rem clamp(2.75rem, 7vw, 7rem);
+  min-width: 0;
+  height: calc(100dvh - 4.4rem);
+  padding: 2rem clamp(1.25rem, 4vw, 4rem);
+  overflow: hidden;
 }
 
 .hero {
@@ -22,13 +27,24 @@
 .stage {
   position: relative;
   z-index: 1;
-  width: min(96rem, 100%);
-  padding: 1.35rem 1.4rem 0.7rem;
+  display: flex;
+  flex-direction: column;
+  width: min(68rem, 100%);
+  min-width: 0;
+  max-width: 100%;
+  max-height: calc(100dvh - 8rem);
+  padding: 1.2rem 1.25rem 0.75rem;
+  overflow: hidden;
   border: 1px solid var(--hairline);
   border-radius: var(--radius-lg);
   background: rgba(255, 255, 255, 0.94);
   backdrop-filter: blur(22px) saturate(1.4);
   box-shadow: var(--shadow-float);
+}
+
+.stage app-ui-table {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .toolbar {

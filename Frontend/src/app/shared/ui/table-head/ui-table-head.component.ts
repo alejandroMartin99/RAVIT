@@ -1,4 +1,4 @@
-import { Component, ElementRef, computed, effect, inject, input, model, output, signal } from '@angular/core';
+import { Component, DestroyRef, ElementRef, computed, effect, inject, input, model, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 @Component({
@@ -10,6 +10,8 @@ import { FormsModule } from '@angular/forms';
 })
 export class UiTableHeadComponent {
   private readonly host = inject(ElementRef<HTMLElement>);
+  private readonly destroy = inject(DestroyRef);
+  private applyTimer: ReturnType<typeof setTimeout> | null = null;
 
   readonly label = input.required<string>();
   readonly options = input<string[]>([]);
@@ -31,12 +33,23 @@ export class UiTableHeadComponent {
   readonly filtered = computed(() => this.selected() !== null);
 
   constructor() {
+    this.destroy.onDestroy(() => this.clearTimer());
     effect(() => {
       if (!this.open()) {
         return;
       }
       queueMicrotask(() => this.placePanel());
     });
+  }
+
+  onQuery(value: string): void {
+    this.query.set(value);
+    this.clearTimer();
+    this.applyTimer = setTimeout(() => this.applyQuery(), 1000);
+  }
+
+  onQueryEnter(): void {
+    this.applyQuery();
   }
 
   isOn(value: string): boolean {
@@ -60,6 +73,23 @@ export class UiTableHeadComponent {
 
   clear(): void {
     this.selected.set([]);
+  }
+
+  private applyQuery(): void {
+    this.clearTimer();
+    const q = this.query().trim().toLowerCase();
+    if (!q) {
+      this.selected.set(null);
+      return;
+    }
+    this.selected.set(this.options().filter((item) => item.toLowerCase().includes(q)));
+  }
+
+  private clearTimer(): void {
+    if (this.applyTimer) {
+      clearTimeout(this.applyTimer);
+      this.applyTimer = null;
+    }
   }
 
   private placePanel(): void {

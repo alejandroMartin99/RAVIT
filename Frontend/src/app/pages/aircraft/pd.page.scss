@@ -12,7 +12,7 @@
 
 .mod {
   position: relative;
-  z-index: 8;
+  z-index: 5;
   display: flex;
   flex: 0 0 auto;
   align-items: center;
@@ -24,11 +24,35 @@
   min-width: max-content;
 }
 
+.mod-help {
+  margin-left: auto;
+}
+
 .mod-title {
   display: flex;
   align-items: center;
   gap: 0.75rem;
   white-space: nowrap;
+}
+
+.mod-title .pick-btn {
+  min-width: 0;
+  min-height: 1.85rem;
+  gap: 0.5rem;
+  padding: 0.2rem 0.7rem;
+  border-radius: 980px;
+}
+
+.mod-title .pick-val {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.mod-title .pick-list {
+  min-width: 8.5rem;
 }
 
 .kicker {
@@ -194,6 +218,79 @@ h2 {
 
 .pick-list button.is-on {
   font-weight: 600;
+}
+
+.col-chips {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.col-chip {
+  min-height: 1.85rem;
+  padding: 0.2rem 0.7rem;
+  border: 1px solid var(--hairline);
+  border-radius: 980px;
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.col-chip:hover {
+  background: var(--fill);
+  color: var(--text);
+}
+
+.col-pick {
+  position: relative;
+}
+
+.col-plus {
+  display: grid;
+  place-items: center;
+  width: 1.85rem;
+  height: 1.85rem;
+  border: 1px solid var(--hairline);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.col-plus svg {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+.col-plus:hover,
+.col-pick.is-open .col-plus {
+  background: var(--fill);
+  color: var(--text);
+}
+
+.col-pick .pick-list {
+  min-width: 13.5rem;
+  max-height: min(22rem, 60vh);
+  overflow: auto;
+}
+
+.col-check {
+  width: 0.45rem;
+  height: 0.75rem;
+  border-right: 1.8px solid var(--accent);
+  border-bottom: 1.8px solid var(--accent);
+  transform: translateY(-1px) rotate(45deg);
+}
+
+.col-chip.is-on {
+  border-color: transparent;
+  background: var(--accent-soft);
+  color: var(--accent);
 }
 
 .tag {

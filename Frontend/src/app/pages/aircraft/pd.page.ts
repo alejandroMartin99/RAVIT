@@ -61,7 +61,13 @@ export class PdPage implements OnInit {
   readonly history = signal<PdIssueRef[]>([]);
   readonly selected = signal<string | null>(null);
   readonly issueOpen = signal(false);
+  readonly colsOpen = signal(false);
+  readonly allIssues = signal(false);
+  readonly mainColumns = signal(false);
+  readonly hiddenCols = signal<Set<string>>(new Set());
+  readonly extraCols = signal<Set<string>>(new Set());
   readonly issue = signal<PdIssue | null>(null);
+  private readonly mainIds = new Set(['task_reference', 'revision', 'fin_position', 'pn', 'sn', 'pd_comment']);
   readonly loading = signal(true);
   readonly uploading = signal(false);
   readonly percent = signal(0);
@@ -103,30 +109,99 @@ export class PdPage implements OnInit {
     { id: 'actions', label: '', value: () => '', action: true, headerClass: 'act-col', cellClass: 'act-col' },
   ]);
 
-  readonly pdCols = computed<UiTableColumn<PdRow>[]>(() => {
-    const versions = this.issue()?.versions ?? [];
+  toggleAllIssues(): void {
+    this.allIssues.update((on) => !on);
+    this.clearColOverrides();
+  }
+
+  toggleMainColumns(): void {
+    this.mainColumns.update((on) => !on);
+    this.clearColOverrides();
+  }
+
+  toggleCols(): void {
+    this.issueOpen.set(false);
+    this.colsOpen.update((open) => !open);
+  }
+
+  colOn(id: string): boolean {
+    if (this.hiddenCols().has(id)) {
+      return false;
+    }
+    if (this.extraCols().has(id)) {
+      return true;
+    }
+    return this.inPreset(id);
+  }
+
+  toggleCol(id: string): void {
+    if (this.colOn(id)) {
+      this.extraCols.update((set) => {
+        const next = new Set(set);
+        next.delete(id);
+        return next;
+      });
+      this.hiddenCols.update((set) => new Set(set).add(id));
+      return;
+    }
+    this.hiddenCols.update((set) => {
+      const next = new Set(set);
+      next.delete(id);
+      return next;
+    });
+    this.extraCols.update((set) => new Set(set).add(id));
+  }
+
+  private clearColOverrides(): void {
+    this.hiddenCols.set(new Set());
+    this.extraCols.set(new Set());
+  }
+
+  private inPreset(id: string): boolean {
+    if (id.startsWith('flag:')) {
+      const versions = this.issue()?.versions ?? [];
+      const shown = this.allIssues() ? versions : versions.slice(-1);
+      return shown.includes(id.slice(5));
+    }
+    return !this.mainColumns() || this.mainIds.has(id);
+  }
+
+  private dataCols(): UiTableColumn<PdRow>[] {
     return [
       { id: 'item_ref', label: 'Item ref', value: (row) => row.item_ref || '', cellClass: 'ref' },
       { id: 'scope_comitee_id', label: 'Scope comitee ID', value: (row) => row.scope_comitee_id || row.reference || '', cellClass: 'ref' },
       { id: 'document_type', label: 'Document type', value: (row) => row.document_type || row.type || '' },
-      { id: 'task_reference', label: 'Task reference', value: (row) => row.task_reference || '', cellClass: 'ref' },
+      { id: 'task_reference', label: 'Task reference', value: (row) => row.task_reference || row.reference || '', cellClass: 'ref' },
       { id: 'revision', label: 'Revision', value: (row) => row.revision || '', cellClass: 'rev' },
       { id: 'description', label: 'Description', value: (row) => this.rowText(row) },
-      { id: 'pn', label: 'PN', value: (row) => row.pn || '' },
-      { id: 'sn', label: 'SN', value: (row) => row.sn || '' },
       { id: 'fin_position', label: 'FIN / Position', value: (row) => row.fin_position || '' },
+      { id: 'pn', label: 'PNR', value: (row) => row.pn || '' },
+      { id: 'sn', label: 'SNR', value: (row) => row.sn || '' },
       { id: 'source_material', label: 'Source material', value: (row) => row.source_material || '' },
       { id: 'source_hours', label: 'Source hours', value: (row) => row.source_hours || '' },
       { id: 'pd_comment', label: 'PD comment', value: (row) => row.pd_comment || '' },
-      ...versions.map((col) => ({
-        id: `flag:${col}`,
-        label: col,
-        value: (row: PdRow) => row.flags[col] ?? '',
-        headerClass: 'flag-col',
-        cellClass: 'flag-col',
-        badge: true,
-      })),
     ];
+  }
+
+  readonly colChoices = computed(() => {
+    const versions = this.issue()?.versions ?? [];
+    return [
+      ...this.dataCols().map((col) => ({ id: col.id, label: col.label })),
+      ...versions.map((col) => ({ id: `flag:${col}`, label: col })),
+    ];
+  });
+
+  readonly pdCols = computed<UiTableColumn<PdRow>[]>(() => {
+    const versions = this.issue()?.versions ?? [];
+    const flags = versions.map((col) => ({
+      id: `flag:${col}`,
+      label: col,
+      value: (row: PdRow) => row.flags[col] ?? '',
+      headerClass: 'flag-col',
+      cellClass: 'flag-col',
+      badge: true,
+    }));
+    return [...this.dataCols(), ...flags].filter((col) => this.colOn(col.id));
   });
 
   ngOnInit(): void {
@@ -158,6 +233,10 @@ export class PdPage implements OnInit {
       return '—';
     }
     return `Issue ${item.number.toString().padStart(2, '0')}`;
+  }
+
+  issueCode(item: PdIssueRef | string | null): string {
+    return this.issueLabel(item).replace(/^Issue\s+/, '');
   }
 
   failNote(item: PdIssueRef): string {
@@ -203,22 +282,26 @@ export class PdPage implements OnInit {
   @HostListener('document:click', ['$event'])
   closeMenus(event: MouseEvent): void {
     const path = event.composedPath();
-    const inPick = path.some((node) => node instanceof HTMLElement && node.classList.contains('pick'));
+    const inPick = path.some((node) => node instanceof HTMLElement && (node.classList.contains('pick') || node.classList.contains('col-pick')));
     if (!inPick) {
       this.issueOpen.set(false);
+      this.colsOpen.set(false);
     }
   }
 
   @HostListener('document:keydown.escape')
   onEscape(): void {
     this.issueOpen.set(false);
+    this.colsOpen.set(false);
   }
 
   closeIssues(): void {
     this.issueOpen.set(false);
+    this.colsOpen.set(false);
   }
 
   toggleIssues(): void {
+    this.colsOpen.set(false);
     this.issueOpen.update((open) => !open);
   }
 

@@ -1,5 +1,5 @@
 <div class="shell">
-  <header class="bar" (click)="onBarClick($event)">
+  <header class="bar">
     <button
       type="button"
       class="burger"
@@ -41,19 +41,94 @@
       tabindex="-1"
       (click)="closeSidebar()"
     ></button>
-    <aside class="drawer" [class.is-open]="sidebarOpen()" aria-label="Main menu">
-      <p class="drawer-title">Menu</p>
-      <nav>
-        @for (item of sideNav; track item.id) {
-          @if (isGroup(item)) {
-            <div class="group">
-              <button
-                type="button"
-                class="block"
-                [class.is-off]="!canOpen(item)"
-                [class.is-open]="isExpanded(item)"
-                [attr.aria-disabled]="!canOpen(item)"
-                (click)="toggleGroup(item, $event)"
+
+    <aside class="nav" [class.is-open]="sidebarOpen()" aria-label="Main menu">
+      <div class="nav-pane">
+        <div class="nav-head">
+          <p class="nav-kicker">Navigation</p>
+          <p class="nav-ctx">{{ msnTitle() || 'Select an aircraft to unlock modules' }}</p>
+        </div>
+
+        <nav>
+          @for (item of sideNav; track item.id) {
+            @if (isGroup(item)) {
+              <div class="group">
+                <button
+                  type="button"
+                  class="item"
+                  [class.is-off]="!canOpen(item)"
+                  [class.is-open]="isExpanded(item)"
+                  [attr.aria-disabled]="!canOpen(item)"
+                  (click)="toggleGroup(item, $event)"
+                  (mouseenter)="onLockMove($event, item)"
+                  (mousemove)="onLockMove($event, item)"
+                  (mouseleave)="onLockLeave()"
+                >
+                  <app-module-icon [name]="item.icon" />
+                  <span class="copy">
+                    <span class="code">{{ item.code }}</span>
+                    <span class="name">{{ item.label }}</span>
+                  </span>
+                  @if (!canOpen(item)) {
+                    <span class="lock" aria-hidden="true"></span>
+                  } @else {
+                    <span class="chev" aria-hidden="true"></span>
+                  }
+                </button>
+                @if (item.children?.length) {
+                  <div class="branch" [class.is-open]="canOpen(item) && isExpanded(item)">
+                    <div class="branch-inner">
+                      @for (child of item.children; track child.id) {
+                        @if (child.children?.length) {
+                          <div class="fold" [class.is-open]="isNestedOpen(item, child)">
+                            <button
+                              type="button"
+                              class="leaf"
+                              [class.is-on]="isNestedActive(child)"
+                              (click)="toggleNested(item, child, $event)"
+                            >
+                              <app-module-icon [name]="child.icon" />
+                              <span>{{ child.label }}</span>
+                              <span class="chev" [class.is-down]="isNestedOpen(item, child)" aria-hidden="true"></span>
+                            </button>
+                            <div class="branch nest" [class.is-open]="isNestedOpen(item, child)">
+                              <div class="branch-inner">
+                                @for (grand of child.children; track grand.id) {
+                                  <a class="leaf is-grand" [routerLink]="grandPath(item, child, grand)" routerLinkActive="is-on">
+                                    <app-module-icon [name]="grand.icon" />
+                                    <span>{{ grand.label }}</span>
+                                  </a>
+                                }
+                              </div>
+                            </div>
+                          </div>
+                        } @else {
+                          <a class="leaf" [routerLink]="childPath(item, child)" routerLinkActive="is-on">
+                            <app-module-icon [name]="child.icon" />
+                            <span>{{ child.label }}</span>
+                          </a>
+                        }
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            } @else if (canOpen(item)) {
+              <a
+                class="item"
+                [routerLink]="pathFor(item)"
+                routerLinkActive="is-on"
+                [routerLinkActiveOptions]="{ exact: !item.slug }"
+              >
+                <app-module-icon [name]="item.icon" />
+                <span class="copy">
+                  <span class="code">{{ item.code }}</span>
+                  <span class="name">{{ item.label }}</span>
+                </span>
+              </a>
+            } @else {
+              <span
+                class="item is-off"
                 (mouseenter)="onLockMove($event, item)"
                 (mousemove)="onLockMove($event, item)"
                 (mouseleave)="onLockLeave()"
@@ -63,85 +138,12 @@
                   <span class="code">{{ item.code }}</span>
                   <span class="name">{{ item.label }}</span>
                 </span>
-                <span class="chev" aria-hidden="true"></span>
-              </button>
-              @if (item.children?.length) {
-                <div class="sub" [class.is-open]="canOpen(item) && isExpanded(item)">
-                  <div class="sub-inner is-stack">
-                    @for (child of item.children; track child.id) {
-                      @if (child.children?.length) {
-                        <div class="nest-block" [class.is-open]="isNestedOpen(item, child)">
-                          <button
-                            type="button"
-                            class="sub-link"
-                            [class.is-on]="isNestedActive(child)"
-                            (click)="toggleNested(item, child, $event)"
-                          >
-                            <app-module-icon [name]="child.icon" />
-                            <span>{{ child.label }}</span>
-                            <span class="chev" [class.is-down]="isNestedOpen(item, child)" aria-hidden="true"></span>
-                          </button>
-                          <div class="sub nest" [class.is-open]="isNestedOpen(item, child)">
-                            <div class="sub-inner">
-                              @for (grand of child.children; track grand.id) {
-                                <a
-                                  class="grand"
-                                  [routerLink]="grandPath(item, child, grand)"
-                                  routerLinkActive="is-on"
-                                  (click)="closeSidebar()"
-                                >
-                                  <app-module-icon [name]="grand.icon" />
-                                  <span>{{ grand.label }}</span>
-                                </a>
-                              }
-                            </div>
-                          </div>
-                        </div>
-                      } @else {
-                        <a
-                          [routerLink]="childPath(item, child)"
-                          routerLinkActive="is-on"
-                          (click)="closeSidebar()"
-                        >
-                          <app-module-icon [name]="child.icon" />
-                          <span>{{ child.label }}</span>
-                        </a>
-                      }
-                    }
-                  </div>
-                </div>
-              }
-            </div>
-          } @else if (canOpen(item)) {
-            <a
-              class="block"
-              [routerLink]="pathFor(item)"
-              routerLinkActive="is-on"
-              [routerLinkActiveOptions]="{ exact: !item.slug }"
-              (click)="closeSidebar()"
-            >
-              <app-module-icon [name]="item.icon" />
-              <span class="copy">
-                <span class="code">{{ item.code }}</span>
-                <span class="name">{{ item.label }}</span>
+                <span class="lock" aria-hidden="true"></span>
               </span>
-            </a>
-          } @else {
-            <span
-              class="block is-off"
-              (mouseenter)="onLockMove($event, item)"
-              (mousemove)="onLockMove($event, item)"
-              (mouseleave)="onLockLeave()"
-            >
-              <app-module-icon [name]="item.icon" />
-              <span class="copy">
-                <span class="code">{{ item.code }}</span>
-                <span class="name">{{ item.label }}</span>
-              </span>
-            </span>
+            }
           }
-        }
-      </nav>
+        </nav>
+      </div>
     </aside>
 
     <main class="main">
@@ -152,7 +154,6 @@
 
 @if (lockTip(); as tip) {
   <div class="lock-tip" [style.left.px]="tip.x" [style.top.px]="tip.y">
-    <span class="ban" aria-hidden="true"></span>
     Select an aircraft first
   </div>
 }
