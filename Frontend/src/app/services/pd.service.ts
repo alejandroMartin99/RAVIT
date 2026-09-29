@@ -34,6 +34,14 @@ export interface PdIssue {
   rows: PdRow[];
 }
 
+export interface PdCompare {
+  new: string;
+  old: string | null;
+  versions: string[];
+  columns: string[];
+  rows: Record<string, string>[];
+}
+
 export interface PdIssueRef {
   id: string;
   issue?: string | null;
@@ -88,6 +96,12 @@ export class PdService {
 
   get(aircraftId: string, issue: string): Observable<PdIssue> {
     return this.http.get<PdIssue>(`${this.url(aircraftId)}${issue}`);
+  }
+
+  compare(aircraftId: string, neu: string, old: string) {
+    return this.http.get<PdCompare>(`${this.url(aircraftId)}compare`, {
+      params: { new: neu, old },
+    });
   }
 
   create(aircraftId: string): Observable<PdIssue> {

@@ -9,7 +9,7 @@
     </header>
     <div class="grid">
       @for (item of modules; track item.id) {
-        <a class="tile" [routerLink]="['/aircraft', ac.id, item.slug]" routerLinkActive="is-on">
+        <a class="tile" [routerLink]="['/aircraft', padMsn(ac.msn), item.slug]" routerLinkActive="is-on">
           <app-module-icon [name]="item.icon" />
           <span class="code">{{ item.code }}</span>
           <span class="name">{{ item.label }}</span>

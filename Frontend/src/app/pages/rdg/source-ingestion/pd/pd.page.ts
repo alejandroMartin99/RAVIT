@@ -2,18 +2,16 @@ import { DatePipe } from '@angular/common';
 import { Component, ElementRef, HostListener, OnInit, computed, inject, signal, viewChild } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { PdCheckStatus, PdFailRow, PdIngestEvent, PdIssue, PdIssueRef, PdRow, PdService } from '../../services/pd.service';
-import { AircraftService } from '../../services/aircraft.service';
-import { WorkspaceService } from '../../services/workspace.service';
-import { ModuleIconComponent } from '../../shared/ui/module-icon/module-icon.component';
-import { UiHelpComponent } from '../../shared/ui/help/ui-help.component';
-import { UiButtonComponent } from '../../shared/ui/button/ui-button.component';
-import { UiModalComponent } from '../../shared/ui/modal/ui-modal.component';
-import { UiTableCellDirective } from '../../shared/ui/table/ui-table-cell.directive';
-import { UiTableExpandDirective } from '../../shared/ui/table/ui-table-expand.directive';
-import { UiTableColumn } from '../../shared/ui/table/ui-table.column';
-import { UiTableComponent } from '../../shared/ui/table/ui-table.component';
-import { forkJoin, timer } from 'rxjs';
+import { PdCheckStatus, PdCompare, PdFailRow, PdIngestEvent, PdIssue, PdIssueRef, PdRow, PdService } from '../../../../services/pd.service';
+import { AircraftService } from '../../../../services/aircraft.service';
+import { WorkspaceService } from '../../../../services/workspace.service';
+import { ModuleIconComponent } from '../../../../shared/ui/module-icon/module-icon.component';
+import { UiButtonComponent, UiChipComponent, UiEmptyComponent, UiHelpComponent, UiIconActComponent, UiModalComponent, UiSegmentedComponent, UiSkelTableComponent, UiTableCellDirective, UiTableColumn, UiTableComponent, UiTableExpandDirective } from '../../../../shared/ui';
+import { SegmentOption } from '../../../../shared/ui/segmented/ui-segmented.component';
+import { enterAircraft, routeMsn } from '../../../_shared/aircraft-context';
+import { cellOf, changeArrow, changedBases, compareFieldId, viewLikeValue, type PdCompareRow } from './pd-compare';
+import { forkJoin, of, timer } from 'rxjs';
+import { tap } from 'rxjs/operators';
 
 interface IngestStep {
   id: string;
@@ -25,10 +23,10 @@ interface IngestStep {
 @Component({
   selector: 'app-pd',
   standalone: true,
-  imports: [RouterLink, DatePipe, ModuleIconComponent, UiTableComponent, UiTableCellDirective, UiTableExpandDirective, UiModalComponent, UiButtonComponent, UiHelpComponent],
+  imports: [RouterLink, DatePipe, ModuleIconComponent, UiTableComponent, UiTableCellDirective, UiTableExpandDirective, UiModalComponent, UiButtonComponent, UiHelpComponent, UiChipComponent, UiEmptyComponent, UiIconActComponent, UiSkelTableComponent, UiSegmentedComponent],
   providers: [DatePipe],
   templateUrl: './pd.page.html',
-  styleUrl: './pd.page.scss',
+  styleUrl: '../../../_shared/source-page.scss',
 })
 export class PdPage implements OnInit {
   private readonly route = inject(ActivatedRoute);
@@ -40,7 +38,7 @@ export class PdPage implements OnInit {
   private readonly picker = viewChild<ElementRef<HTMLInputElement>>('picker');
 
   private readonly data = toSignal(this.route.data, { initialValue: this.route.snapshot.data });
-  private readonly aircraftIdSig = signal(this.route.snapshot.paramMap.get('id') ?? '');
+  private readonly aircraftIdSig = signal(routeMsn(this.route));
   get aircraftId(): string {
     return this.aircraftIdSig();
   }
@@ -59,14 +57,25 @@ export class PdPage implements OnInit {
 
   readonly issues = signal<PdIssueRef[]>([]);
   readonly history = signal<PdIssueRef[]>([]);
+  readonly mode = signal<'view' | 'delta'>('view');
+  readonly modeOptions: SegmentOption[] = [
+    { value: 'view', label: 'View' },
+    { value: 'delta', label: 'Delta' },
+  ];
   readonly selected = signal<string | null>(null);
+  readonly selectedNew = signal<string | null>(null);
+  readonly selectedOld = signal<string | null>(null);
   readonly issueOpen = signal(false);
+  readonly newOpen = signal(false);
+  readonly oldOpen = signal(false);
   readonly colsOpen = signal(false);
   readonly allIssues = signal(false);
-  readonly mainColumns = signal(false);
+  readonly mainColumns = signal(true);
   readonly hiddenCols = signal<Set<string>>(new Set());
   readonly extraCols = signal<Set<string>>(new Set());
   readonly issue = signal<PdIssue | null>(null);
+  readonly delta = signal<PdCompare | null>(null);
+  private readonly issueCache = new Map<string, PdIssue>();
   private readonly mainIds = new Set(['task_reference', 'revision', 'fin_position', 'pn', 'sn', 'pd_comment']);
   readonly loading = signal(true);
   readonly uploading = signal(false);
@@ -87,6 +96,22 @@ export class PdPage implements OnInit {
   readonly trackHistory = (item: PdIssueRef) => item.id;
   readonly trackRow = (row: PdRow) =>
     `${row.item_ref ?? ''}-${row.task_reference ?? row.reference ?? ''}-${row.revision ?? ''}`;
+  readonly trackCompare = (row: PdCompareRow) => row['item_ref'];
+  readonly compareRowClass = (row: PdCompareRow) => ({
+    'is-discard': row['Item_Status'] === 'Discard_Line',
+    'is-new': row['Item_Status'] === 'new_line',
+  });
+  readonly deltaLineRows = computed(() =>
+    [...this.deltaNew(), ...this.deltaDiscard()].sort((a, b) => (a['item_ref'] || '').localeCompare(b['item_ref'] || '', undefined, { numeric: true })),
+  );
+  readonly deltaLineNote = computed(() => {
+    const n = this.deltaNew().length;
+    const d = this.deltaDiscard().length;
+    const news = n === 1 ? '1 new line' : `${n} new lines`;
+    const discards = d === 1 ? '1 discard line' : `${d} discard lines`;
+    return `${news} · ${discards}`;
+  });
+  readonly canDelta = computed(() => !!this.selectedNew() && !!this.selectedOld() && this.selectedNew() !== this.selectedOld());
   readonly historyRowClass = (item: PdIssueRef) => ({ 'is-current': item.current, 'is-fail': item.status === 'fail' });
 
   readonly histCols = computed<UiTableColumn<PdIssueRef>[]>(() => [
@@ -121,7 +146,28 @@ export class PdPage implements OnInit {
 
   toggleCols(): void {
     this.issueOpen.set(false);
+    this.newOpen.set(false);
+    this.oldOpen.set(false);
     this.colsOpen.update((open) => !open);
+  }
+
+  setMode(next: string): void {
+    if (next !== 'view' && next !== 'delta') {
+      return;
+    }
+    if (next === this.mode()) {
+      return;
+    }
+    this.closeIssues();
+    this.clearColOverrides();
+    this.mainColumns.set(true);
+    this.mode.set(next);
+    if (next === 'view') {
+      const id = this.selected();
+      if (id && !this.issue()) {
+        this.loadIssue(id);
+      }
+    }
   }
 
   colOn(id: string): boolean {
@@ -159,11 +205,24 @@ export class PdPage implements OnInit {
 
   private inPreset(id: string): boolean {
     if (id.startsWith('flag:')) {
-      const versions = this.issue()?.versions ?? [];
-      const shown = this.allIssues() ? versions : versions.slice(-1);
+      const versions = this.viewVersions();
+      const shown = this.allIssues()
+        ? versions
+        : this.mode() === 'delta'
+          ? [this.selectedNew()].filter((col): col is string => !!col)
+          : versions.slice(-1);
       return shown.includes(id.slice(5));
     }
     return !this.mainColumns() || this.mainIds.has(id);
+  }
+
+  private viewVersions(): string[] {
+    if (this.mode() === 'delta') {
+      const extra = this.selectedNew();
+      const base = this.delta()?.versions ?? [];
+      return extra && !base.includes(extra) ? [...base, extra] : base;
+    }
+    return this.issue()?.versions ?? [];
   }
 
   private dataCols(): UiTableColumn<PdRow>[] {
@@ -184,10 +243,68 @@ export class PdPage implements OnInit {
   }
 
   readonly colChoices = computed(() => {
-    const versions = this.issue()?.versions ?? [];
+    const versions = this.viewVersions();
     return [
       ...this.dataCols().map((col) => ({ id: col.id, label: col.label })),
       ...versions.map((col) => ({ id: `flag:${col}`, label: col })),
+    ];
+  });
+
+  readonly deltaNew = computed(() => (this.delta()?.rows ?? []).filter((row) => row['Item_Status'] === 'new_line'));
+  readonly deltaDiscard = computed(() => (this.delta()?.rows ?? []).filter((row) => row['Item_Status'] === 'Discard_Line'));
+  readonly deltaChange = computed(() => (this.delta()?.rows ?? []).filter((row) => row['Item_Status'] === 'Change'));
+
+  readonly deltaViewCols = computed(() => {
+    const cols: UiTableColumn<PdCompareRow>[] = this.dataCols().map((col) => {
+      const id = col.id;
+      const mapped: UiTableColumn<PdCompareRow> = {
+        id,
+        label: col.label,
+        cellClass: id === 'item_ref' ? 'ref' : id === 'revision' ? 'rev' : undefined,
+        value: (row) => (id === 'item_ref' ? cellOf(row, 'item_ref') : viewLikeValue(row, id)),
+      };
+      return mapped;
+    });
+    for (const ver of this.viewVersions()) {
+      cols.push({
+        id: `flag:${ver}`,
+        label: ver,
+        value: (row) => viewLikeValue(row, ver),
+        headerClass: 'flag-col',
+        cellClass: 'flag-col',
+        badge: true,
+      });
+    }
+    return cols.filter((col) => this.colOn(col.id));
+  });
+
+  readonly deltaChangeCols = computed<UiTableColumn<PdCompareRow>[]>(() => {
+    const neu = this.selectedNew() ?? '';
+    const old = this.selectedOld() ?? '';
+    const labels = Object.fromEntries(this.dataCols().map((col) => [col.id, col.label]));
+    const bases = new Set<string>();
+    for (const row of this.deltaChange()) {
+      for (const base of changedBases(row)) {
+        const field = compareFieldId(base);
+        if (!field || this.colOn(field)) {
+          bases.add(base);
+        }
+      }
+    }
+    const order = [
+      ...this.dataCols().map((col) => col.id),
+      ...this.viewVersions(),
+      'ChangeStatus',
+    ];
+    const fields = order.filter((base) => bases.has(base));
+    return [
+      { id: 'item_ref', label: 'Item ref', value: (row) => cellOf(row, 'item_ref'), cellClass: 'ref' },
+      ...fields.map((base) => ({
+        id: `chg:${base}`,
+        label: base === 'ChangeStatus' ? 'Change status' : labels[base] || base,
+        value: (row: PdCompareRow) => (changedBases(row).includes(base) ? changeArrow(row, base, neu, old) : ''),
+        clip: false,
+      })),
     ];
   });
 
@@ -206,12 +323,13 @@ export class PdPage implements OnInit {
 
   ngOnInit(): void {
     this.route.paramMap.subscribe((params) => {
-      const id = params.get('id');
-      if (!id) {
+      const msn = routeMsn(this.route, params);
+      if (!msn) {
         void this.router.navigateByUrl('/');
         return;
       }
-      this.bindAircraft(id);
+      this.aircraftIdSig.set(msn);
+      enterAircraft(this.route, this.router, this.aircraftApi, this.workspace, () => this.reload());
     });
   }
 
@@ -284,34 +402,115 @@ export class PdPage implements OnInit {
     const path = event.composedPath();
     const inPick = path.some((node) => node instanceof HTMLElement && (node.classList.contains('pick') || node.classList.contains('col-pick')));
     if (!inPick) {
-      this.issueOpen.set(false);
-      this.colsOpen.set(false);
+      this.closeIssues();
     }
   }
 
   @HostListener('document:keydown.escape')
   onEscape(): void {
-    this.issueOpen.set(false);
-    this.colsOpen.set(false);
+    this.closeIssues();
   }
 
   closeIssues(): void {
     this.issueOpen.set(false);
+    this.newOpen.set(false);
+    this.oldOpen.set(false);
     this.colsOpen.set(false);
   }
 
   toggleIssues(): void {
     this.colsOpen.set(false);
+    this.newOpen.set(false);
+    this.oldOpen.set(false);
     this.issueOpen.update((open) => !open);
+  }
+
+  toggleNew(): void {
+    this.colsOpen.set(false);
+    this.issueOpen.set(false);
+    this.oldOpen.set(false);
+    this.newOpen.update((open) => !open);
+  }
+
+  toggleOld(): void {
+    this.colsOpen.set(false);
+    this.issueOpen.set(false);
+    this.newOpen.set(false);
+    this.oldOpen.update((open) => !open);
   }
 
   selectIssue(id: string): void {
     this.issueOpen.set(false);
-    if (id === this.selected()) {
+    if (id === this.selected() && this.issue()) {
       return;
     }
     this.selected.set(id);
     this.loadIssue(id);
+  }
+
+  selectNew(id: string): void {
+    this.newOpen.set(false);
+    if (id === this.selectedNew()) {
+      return;
+    }
+    this.selectedNew.set(id);
+    if (id === this.selectedOld()) {
+      this.selectedOld.set(this.otherIssue(id));
+    }
+    this.delta.set(null);
+  }
+
+  selectOld(id: string): void {
+    this.oldOpen.set(false);
+    if (id === this.selectedOld()) {
+      return;
+    }
+    this.selectedOld.set(id);
+    if (id === this.selectedNew()) {
+      this.selectedNew.set(this.otherIssue(id));
+    }
+    this.delta.set(null);
+  }
+
+  generateDelta(): void {
+    const neu = this.selectedNew();
+    const old = this.selectedOld();
+    if (!neu || !old || neu === old) {
+      return;
+    }
+    const gen = ++this.loadGen;
+    this.loading.set(true);
+    this.error.set(null);
+    this.skelCols.set([
+      { id: 'item_ref', label: 'Item ref' },
+      { id: 'Item_Status', label: 'Status' },
+      { id: 'ChangeStatus__Check', label: 'Change status' },
+    ]);
+    this.pdApi.compare(this.aircraftId, neu, old).subscribe({
+      next: (payload) => {
+        if (gen !== this.loadGen) {
+          return;
+        }
+        this.delta.set(payload);
+        this.loading.set(false);
+      },
+      error: () => {
+        if (gen !== this.loadGen) {
+          return;
+        }
+        this.loading.set(false);
+        this.error.set('Could not generate the PD delta.');
+      },
+    });
+  }
+
+  private otherIssue(except: string): string | null {
+    const list = this.issues();
+    const idx = list.findIndex((item) => item.issue === except);
+    if (idx > 0) {
+      return list[idx - 1].issue ?? null;
+    }
+    return list.find((item) => item.issue && item.issue !== except)?.issue ?? null;
   }
 
   rowText(row: { description?: string; title?: string }): string {
@@ -450,12 +649,15 @@ export class PdPage implements OnInit {
   }
 
   private reload(): void {
+    this.mode.set('view');
+    this.delta.set(null);
     this.loading.set(true);
     this.error.set(null);
     this.refreshList(true);
   }
 
   private refreshList(loadCurrent = false): void {
+    this.issueCache.clear();
     this.pdApi.list(this.aircraftId).subscribe({
       next: (listed) => {
         this.issues.set(listed.issues);
@@ -464,6 +666,8 @@ export class PdPage implements OnInit {
         const match = listed.issues.find((item) => item.issue === wanted || item.id === wanted);
         const target = match?.issue || listed.latest;
         this.selected.set(target);
+        this.selectedNew.set(target);
+        this.selectedOld.set(target ? this.otherIssue(target) : null);
         if (!loadCurrent || this.ingest() || !target) {
           this.loading.set(false);
           return;
@@ -477,18 +681,12 @@ export class PdPage implements OnInit {
     });
   }
 
-  private bindAircraft(id: string): void {
-    this.aircraftIdSig.set(id);
-    this.aircraftApi.get(id).subscribe({
-      next: (item) => {
-        this.workspace.enter(item);
-        this.reload();
-      },
-      error: () => {
-        this.workspace.leave();
-        void this.router.navigateByUrl('/');
-      },
-    });
+  private fetchIssue(issue: string) {
+    const hit = this.issueCache.get(issue);
+    if (hit) {
+      return of(hit);
+    }
+    return this.pdApi.get(this.aircraftId, issue).pipe(tap((payload) => this.issueCache.set(issue, payload)));
   }
 
   private loadIssue(issue: string): void {
@@ -501,7 +699,7 @@ export class PdPage implements OnInit {
       { id: 'description', label: 'Description' },
     ]);
     forkJoin({
-      payload: this.pdApi.get(this.aircraftId, issue),
+      payload: this.fetchIssue(issue),
       wait: timer(this.minLoadMs),
     }).subscribe({
       next: ({ payload }) => {

@@ -2,19 +2,14 @@ import { DatePipe } from '@angular/common';
 import { Component, ElementRef, OnInit, computed, inject, signal, viewChild } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { NationCode } from '../../domain/fleet/aircraft.model';
-import { ApcCurrent, ApcRow, ApcService, ApcUpload, ApcIngestEvent } from '../../services/apc.service';
-import { AircraftService } from '../../services/aircraft.service';
-import { PdCheckStatus } from '../../services/pd.service';
-import { WorkspaceService } from '../../services/workspace.service';
-import { ModuleIconComponent } from '../../shared/ui/module-icon/module-icon.component';
-import { FlagIconComponent } from '../../shared/ui/flag-icon/flag-icon.component';
-import { UiHelpComponent } from '../../shared/ui/help/ui-help.component';
-import { UiButtonComponent } from '../../shared/ui/button/ui-button.component';
-import { UiModalComponent } from '../../shared/ui/modal/ui-modal.component';
-import { UiTableCellDirective } from '../../shared/ui/table/ui-table-cell.directive';
-import { UiTableColumn } from '../../shared/ui/table/ui-table.column';
-import { UiTableComponent } from '../../shared/ui/table/ui-table.component';
+import { NationCode } from '../../../../domain/fleet/aircraft.model';
+import { ApcCurrent, ApcRow, ApcService, ApcUpload, ApcIngestEvent } from '../../../../services/apc.service';
+import { AircraftService } from '../../../../services/aircraft.service';
+import { PdCheckStatus } from '../../../../services/pd.service';
+import { WorkspaceService } from '../../../../services/workspace.service';
+import { ModuleIconComponent } from '../../../../shared/ui/module-icon/module-icon.component';
+import { FlagIconComponent, UiButtonComponent, UiEmptyComponent, UiHelpComponent, UiIconActComponent, UiModalComponent, UiTableCellDirective, UiTableColumn, UiTableComponent } from '../../../../shared/ui';
+import { enterAircraft, routeMsn } from '../../../_shared/aircraft-context';
 
 interface IngestStep {
   id: string;
@@ -26,10 +21,10 @@ interface IngestStep {
 @Component({
   selector: 'app-apc',
   standalone: true,
-  imports: [RouterLink, ModuleIconComponent, FlagIconComponent, UiTableComponent, UiTableCellDirective, UiModalComponent, UiButtonComponent, UiHelpComponent],
+  imports: [RouterLink, ModuleIconComponent, FlagIconComponent, UiTableComponent, UiTableCellDirective, UiModalComponent, UiButtonComponent, UiHelpComponent, UiEmptyComponent, UiIconActComponent],
   providers: [DatePipe],
   templateUrl: './apc.page.html',
-  styleUrl: './pd.page.scss',
+  styleUrl: '../../../_shared/source-page.scss',
 })
 export class ApcPage implements OnInit {
   private readonly route = inject(ActivatedRoute);
@@ -41,7 +36,7 @@ export class ApcPage implements OnInit {
   private readonly picker = viewChild<ElementRef<HTMLInputElement>>('picker');
 
   private readonly data = toSignal(this.route.data, { initialValue: this.route.snapshot.data });
-  readonly aircraftId = this.route.snapshot.paramMap.get('id') ?? '';
+  readonly aircraftId = routeMsn(this.route);
   readonly circ = 2 * Math.PI * 52;
 
   readonly code = computed(() => (this.data()['code'] as string) ?? '');
@@ -101,21 +96,7 @@ export class ApcPage implements OnInit {
   ]);
 
   ngOnInit(): void {
-    const id = this.route.snapshot.paramMap.get('id');
-    if (!id) {
-      void this.router.navigateByUrl('/');
-      return;
-    }
-    this.aircraftApi.get(id).subscribe({
-      next: (item) => {
-        this.workspace.enter(item);
-        this.reload();
-      },
-      error: () => {
-        this.workspace.leave();
-        void this.router.navigateByUrl('/');
-      },
-    });
+    enterAircraft(this.route, this.router, this.aircraftApi, this.workspace, () => this.reload());
   }
 
   openPicker(): void {

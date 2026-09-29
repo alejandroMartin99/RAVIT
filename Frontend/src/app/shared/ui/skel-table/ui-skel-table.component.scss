@@ -1,0 +1,96 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.sheet {
+  max-height: min(50vh, calc(100dvh - 20rem));
+  overflow: auto;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+.grid {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.grid th,
+.grid td {
+  padding: 0.7rem 0.85rem;
+  border-bottom: 1px solid var(--hairline);
+  text-align: left;
+}
+
+.grid th {
+  min-width: 9.5rem;
+  color: #3a3a3c;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.sheet.is-skel {
+  position: relative;
+  pointer-events: none;
+}
+
+.sheet.is-skel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  background: linear-gradient(105deg, transparent 18%, rgba(255, 255, 255, 0.55) 48%, transparent 72%);
+  background-size: 220% 100%;
+  animation: skel-sweep 1.35s ease-in-out infinite;
+}
+
+.skel {
+  display: block;
+  height: 0.7rem;
+  width: 72%;
+  border-radius: 7px;
+  background: linear-gradient(90deg, #ececec 0%, #f6f6f7 42%, #e4e4e6 100%);
+  background-size: 180% 100%;
+  animation: skel-pulse 1.2s ease-in-out infinite;
+}
+
+.skel-head {
+  width: 78%;
+  height: 0.62rem;
+  color: transparent;
+  user-select: none;
+}
+
+@keyframes skel-pulse {
+  0%,
+  100% {
+    background-position: 0 0;
+    opacity: 0.72;
+  }
+  50% {
+    background-position: 100% 0;
+    opacity: 1;
+  }
+}
+
+@keyframes skel-sweep {
+  0% {
+    background-position: 120% 0;
+  }
+  100% {
+    background-position: -40% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skel,
+  .sheet.is-skel::after {
+    animation: none;
+  }
+}

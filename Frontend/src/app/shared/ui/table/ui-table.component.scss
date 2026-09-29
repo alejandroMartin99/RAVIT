@@ -1,6 +1,6 @@
 :host {
   display: block;
-  --table-max-h: min(68vh, calc(100dvh - 14rem));
+  --table-max-h: min(50vh, calc(100dvh - 20rem));
 }
 
 :host.is-fit {
@@ -63,7 +63,7 @@
 
 .grid th,
 .grid td {
-  padding: 0.7rem 0.85rem;
+  padding: 0.38rem 0.5rem;
   border-bottom: 1px solid var(--hairline);
   text-align: left;
   vertical-align: middle;
@@ -74,31 +74,31 @@
   top: 0;
   z-index: 4;
   overflow: visible;
-  min-width: 8.5rem;
+  min-width: 6rem;
   background: var(--surface);
   box-shadow: 0 1px 0 var(--hairline);
   color: #3a3a3c;
-  font-size: 0.72rem;
+  font-size: 0.62rem;
   font-weight: 600;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   white-space: nowrap;
 }
 
 .grid td {
   position: relative;
-  font-size: 0.9rem;
+  font-size: 0.78rem;
 }
 
 .has-clip {
-  max-width: 16.5rem;
+  max-width: 13rem;
 }
 
 .clip {
   display: flex;
   align-items: center;
-  gap: 0.3rem;
-  max-width: 16rem;
+  gap: 0.2rem;
+  max-width: 12.5rem;
 }
 
 .clip-text {
@@ -169,31 +169,47 @@
   background: rgba(196, 30, 58, 0.04);
 }
 
+.grid tbody tr.is-discard {
+  background: rgba(110, 110, 115, 0.06);
+}
+
+.grid tbody tr.is-discard:hover {
+  background: rgba(110, 110, 115, 0.12);
+}
+
+.grid tbody tr.is-new {
+  background: rgba(15, 123, 58, 0.04);
+}
+
+.grid tbody tr.is-new:hover {
+  background: rgba(15, 123, 58, 0.08);
+}
+
 .empty {
   color: var(--text-secondary);
   text-align: center;
 }
 
 .act-col {
-  width: 8.6rem;
-  min-width: 8.6rem;
+  width: 6.8rem;
+  min-width: 6.8rem;
   text-align: center;
 }
 
 .flag-col {
   text-align: center;
-  min-width: 8rem;
+  min-width: 5.2rem;
 }
 
 .flag {
   display: inline-flex;
-  min-width: 3.1rem;
+  min-width: 2.4rem;
   justify-content: center;
-  padding: 0.18rem 0.5rem;
+  padding: 0.1rem 0.35rem;
   border-radius: 980px;
-  font-size: 0.75rem;
+  font-size: 0.65rem;
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
 }
 
 .flag.is-y {

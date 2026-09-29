@@ -69,7 +69,7 @@ export const HELP_GUIDES: Record<string, HelpGuide> = {
   'pd-view': {
     title: 'Program Directive · production',
     summary:
-      'This is the live PD for the selected aircraft. It always shows one issue at a time. The current issue is the last successful ingest.',
+      'This is the live PD for the selected aircraft. Choose View to read one issue, or Delta to compare two. The current issue is the last successful ingest.',
     sections: [
       {
         heading: 'This tab',
@@ -78,9 +78,18 @@ export const HELP_GUIDES: Record<string, HelpGuide> = {
       {
         heading: 'What you can do',
         items: [
-          'Read the current issue, including applicability flags per version.',
-          'Switch to a previous successful issue from the issue picker.',
+          'Choose View or Delta in the header. They are separate modes.',
+          'View shows one issue, including applicability flags per version.',
+          'Delta asks for New and Old, then Generate. Column chips apply to the table on screen.',
           'Go to Source ingestion if no PD has been loaded yet.',
+        ],
+      },
+      {
+        heading: 'Delta',
+        items: [
+          'The backend merges on Item ref. Columns that exist only in the new issue are not treated as a field change.',
+          'Only rows that changed, are new, or were discarded (Y → OUT) are returned.',
+          'Each Change row shows only the fields that differ, as old → new.',
         ],
       },
       {

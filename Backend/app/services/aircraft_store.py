@@ -109,8 +109,10 @@ def list_aircraft() -> list[AircraftOut]:
 
 
 def get_aircraft(aircraft_id: str) -> AircraftOut:
+    key = aircraft_id.strip()
+    msn = int(key) if key.isdigit() else None
     for item in list_aircraft():
-        if item.id == aircraft_id:
+        if item.id == key or item.folder == key or item.msn == msn:
             return item
     raise HTTPException(status_code=404, detail="Aircraft not found")
 

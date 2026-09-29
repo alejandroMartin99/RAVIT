@@ -2,12 +2,24 @@
   "attempts": [
     {
       "id": "a001",
+      "issue": "03.00",
+      "number": 3,
+      "status": "ok",
+      "message": null,
+      "source_file": "Issue 03.00 .xlsx",
+      "uploaded_at": "2026-09-27T18:03:39.074557+00:00",
+      "uploaded_by": "Alejandro Mart\u00edn Iglesias",
+      "rows": 594,
+      "fail_rows": []
+    },
+    {
+      "id": "a002",
       "issue": "04.00",
       "number": 4,
       "status": "ok",
       "message": null,
       "source_file": "Issue 04.00.xlsx",
-      "uploaded_at": "2026-09-26T12:55:24.049166+00:00",
+      "uploaded_at": "2026-09-28T15:15:39.435531+00:00",
       "uploaded_by": "Alejandro Mart\u00edn Iglesias",
       "rows": 625,
       "fail_rows": []

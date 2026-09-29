@@ -1,10 +1,16 @@
 export { UiHelpComponent } from './help/ui-help.component';
 export { UiButtonComponent } from './button/ui-button.component';
+export { UiChipComponent } from './chip/ui-chip.component';
+export { UiEmptyComponent } from './empty/ui-empty.component';
+export { UiIconComponent } from './icon/ui-icon.component';
+export { UiIconActComponent } from './icon-act/ui-icon-act.component';
+export { UiSkelTableComponent } from './skel-table/ui-skel-table.component';
 export { FlagIconComponent } from './flag-icon/flag-icon.component';
 export { UiModalComponent } from './modal/ui-modal.component';
 export { UiSegmentedComponent } from './segmented/ui-segmented.component';
 export { UiTableHeadComponent } from './table-head/ui-table-head.component';
 export { UiTableComponent } from './table/ui-table.component';
 export { UiTableCellDirective } from './table/ui-table-cell.directive';
+export { UiTableExpandDirective } from './table/ui-table-expand.directive';
 export type { UiTableColumn } from './table/ui-table.column';
 export { ToastHostComponent } from './toast/toast-host.component';

@@ -84,17 +84,17 @@ export class AppShellComponent {
       return '/';
     }
     const aircraft = this.aircraft();
-    return aircraft ? `/aircraft/${aircraft.id}/${item.slug}` : '/';
+    return aircraft ? `/aircraft/${padMsn(aircraft.msn)}/${item.slug}` : '/';
   }
 
   childPath(item: SideNavItem, child: SideNavChild): string {
     const aircraft = this.aircraft();
-    return aircraft ? `/aircraft/${aircraft.id}/${item.slug}/${child.slug}` : '/';
+    return aircraft ? `/aircraft/${padMsn(aircraft.msn)}/${item.slug}/${child.slug}` : '/';
   }
 
   grandPath(item: SideNavItem, child: SideNavChild, grand: SideNavChild): string {
     const aircraft = this.aircraft();
-    return aircraft ? `/aircraft/${aircraft.id}/${item.slug}/${child.slug}/${grand.slug}` : '/';
+    return aircraft ? `/aircraft/${padMsn(aircraft.msn)}/${item.slug}/${child.slug}/${grand.slug}` : '/';
   }
 
   isNestedOpen(item: SideNavItem, child: SideNavChild): boolean {

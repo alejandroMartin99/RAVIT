@@ -1,11 +1,12 @@
 import { Component, OnInit, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink, RouterLinkActive } from '@angular/router';
-import { SIDE_NAV } from '../../domain/nav/nav.catalog';
-import { AircraftService } from '../../services/aircraft.service';
-import { WorkspaceService } from '../../services/workspace.service';
-import { ModuleIconComponent } from '../../shared/ui/module-icon/module-icon.component';
-import { UiHelpComponent } from '../../shared/ui/help/ui-help.component';
+import { SIDE_NAV } from '../../../domain/nav/nav.catalog';
+import { AircraftService } from '../../../services/aircraft.service';
+import { WorkspaceService } from '../../../services/workspace.service';
+import { ModuleIconComponent } from '../../../shared/ui/module-icon/module-icon.component';
+import { UiHelpComponent } from '../../../shared/ui/help/ui-help.component';
+import { enterAircraft, routeMsn } from '../aircraft-context';
 
 @Component({
   selector: 'app-module',
@@ -21,7 +22,7 @@ export class ModulePage implements OnInit {
   private readonly workspace = inject(WorkspaceService);
 
   private readonly data = toSignal(this.route.data, { initialValue: this.route.snapshot.data });
-  readonly aircraftId = this.route.snapshot.paramMap.get('id') ?? '';
+  readonly aircraftId = routeMsn(this.route);
 
   readonly code = computed(() => (this.data()['code'] as string) ?? '');
   readonly label = computed(() => (this.data()['label'] as string) ?? '');
@@ -45,17 +46,6 @@ export class ModulePage implements OnInit {
   });
 
   ngOnInit(): void {
-    const id = this.route.snapshot.paramMap.get('id');
-    if (!id) {
-      void this.router.navigateByUrl('/');
-      return;
-    }
-    this.aircraftApi.get(id).subscribe({
-      next: (item) => this.workspace.enter(item),
-      error: () => {
-        this.workspace.leave();
-        void this.router.navigateByUrl('/');
-      },
-    });
+    enterAircraft(this.route, this.router, this.aircraftApi, this.workspace);
   }
 }

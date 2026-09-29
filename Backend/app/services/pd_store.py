@@ -10,6 +10,7 @@ from fastapi import HTTPException
 from fastapi.responses import FileResponse
 
 from app.services.aircraft_store import get_aircraft
+from app.services.pd_compare import generate_delta_pd
 from app.services.source_validation import Context, fill_issue_label, load_rules, run_check, to_pd_rows, _version_from_filename
 
 _ISSUE_RE = re.compile(r"^issue(\d{2})$")
@@ -373,6 +374,14 @@ def get_issue(aircraft_id: str, issue: str) -> dict:
     if not path.exists():
         raise HTTPException(status_code=404, detail="PD issue not found")
     return _parse(path)
+
+
+def compare_issues(aircraft_id: str, new_issue: str, old_issue: str) -> dict:
+    if new_issue == old_issue:
+        raise HTTPException(status_code=400, detail="Select two different Program Directive issues.")
+    pd_new = get_issue(aircraft_id, new_issue)
+    pd_old = get_issue(aircraft_id, old_issue)
+    return generate_delta_pd(pd_new, pd_old)
 
 
 def create_next_issue(aircraft_id: str) -> dict:

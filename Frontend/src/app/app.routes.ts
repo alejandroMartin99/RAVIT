@@ -1,40 +1,36 @@
 import { Routes } from '@angular/router';
 import { AIRCRAFT_MODULES } from './domain/nav/nav.catalog';
 
-const modulePage = () =>
-  import('./pages/aircraft/module.page').then((m) => m.ModulePage);
+const placeholder = () =>
+  import('./pages/_shared/placeholder/module.page').then((m) => m.ModulePage);
 
-const pdPage = () =>
-  import('./pages/aircraft/pd.page').then((m) => m.PdPage);
-
-const apcPage = () =>
-  import('./pages/aircraft/apc.page').then((m) => m.ApcPage);
-
+const pages = {
+  landing: () => import('./pages/landing/landing.page').then((m) => m.LandingPage),
+  aircraft: () => import('./pages/aircraft/aircraft.page').then((m) => m.AircraftPage),
+  pd: () => import('./pages/rdg/source-ingestion/pd/pd.page').then((m) => m.PdPage),
+  apc: () => import('./pages/rdg/source-ingestion/apc/apc.page').then((m) => m.ApcPage),
+  placeholder,
+};
 
 const sourcePage = (slug: string) => {
   if (slug === 'pd') {
-    return pdPage;
+    return pages.pd;
   }
   if (slug === 'apc') {
-    return apcPage;
+    return pages.apc;
   }
-  return modulePage;
+  return pages.placeholder;
 };
 
 const aircraftModuleRoutes: Routes = AIRCRAFT_MODULES.flatMap((item) => [
   {
-    path: `aircraft/:id/${item.slug}`,
-    data: {
-      code: item.code,
-      label: item.label,
-      icon: item.icon,
-      slug: item.slug,
-    },
-    loadComponent: modulePage,
+    path: `aircraft/:msn/${item.slug}`,
+    data: { code: item.code, label: item.label, icon: item.icon, slug: item.slug },
+    loadComponent: pages.placeholder,
   },
   ...(item.children ?? []).flatMap((child) => [
     {
-      path: `aircraft/:id/${item.slug}/${child.slug}`,
+      path: `aircraft/:msn/${item.slug}/${child.slug}`,
       data: {
         code: item.code,
         label: item.label,
@@ -43,10 +39,10 @@ const aircraftModuleRoutes: Routes = AIRCRAFT_MODULES.flatMap((item) => [
         childLabel: child.label,
         childSlug: child.slug,
       },
-      loadComponent: modulePage,
+      loadComponent: pages.placeholder,
     },
     ...(child.children ?? []).map((grand) => ({
-      path: `aircraft/:id/${item.slug}/${child.slug}/${grand.slug}`,
+      path: `aircraft/:msn/${item.slug}/${child.slug}/${grand.slug}`,
       data: {
         code: item.code,
         label: item.label,
@@ -67,42 +63,23 @@ const aircraftModuleRoutes: Routes = AIRCRAFT_MODULES.flatMap((item) => [
 export const routes: Routes = [
   {
     path: '',
-    loadComponent: () =>
-      import('./layout/app-shell.component').then((m) => m.AppShellComponent),
+    loadComponent: () => import('./layout/app-shell.component').then((m) => m.AppShellComponent),
     children: [
       {
         path: '',
         pathMatch: 'full',
         data: { breadcrumb: 'Dashboard' },
-        loadComponent: () =>
-          import('./pages/landing/landing.page').then((m) => m.LandingPage),
+        loadComponent: pages.landing,
       },
       {
-        path: 'aircraft/:id',
-        loadComponent: () =>
-          import('./pages/aircraft/aircraft.page').then((m) => m.AircraftPage),
+        path: 'aircraft/:msn',
+        loadComponent: pages.aircraft,
       },
       ...aircraftModuleRoutes,
-      {
-        path: 'aircraft/:id/r.d.p/pd',
-        redirectTo: 'aircraft/:id/r.d.p/plan-data/pd',
-        pathMatch: 'full',
-      },
-      {
-        path: 'aircraft/:id/r.d.p/wo',
-        redirectTo: 'aircraft/:id/r.d.p/mro/wo',
-        pathMatch: 'full',
-      },
-      {
-        path: 'aircraft/:id/r.d.p/ri',
-        redirectTo: 'aircraft/:id/r.d.p/mro/ri',
-        pathMatch: 'full',
-      },
-      {
-        path: 'aircraft/:id/r.d.p/sw',
-        redirectTo: 'aircraft/:id/r.d.p/mro/sw',
-        pathMatch: 'full',
-      },
+      { path: 'aircraft/:msn/r.d.p/pd', redirectTo: 'aircraft/:msn/r.d.p/plan-data/pd', pathMatch: 'full' },
+      { path: 'aircraft/:msn/r.d.p/wo', redirectTo: 'aircraft/:msn/r.d.p/mro/wo', pathMatch: 'full' },
+      { path: 'aircraft/:msn/r.d.p/ri', redirectTo: 'aircraft/:msn/r.d.p/mro/ri', pathMatch: 'full' },
+      { path: 'aircraft/:msn/r.d.p/sw', redirectTo: 'aircraft/:msn/r.d.p/mro/sw', pathMatch: 'full' },
     ],
   },
 ];

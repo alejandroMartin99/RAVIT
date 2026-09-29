@@ -31,8 +31,103 @@
 .mod-title {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 0.75rem;
   white-space: nowrap;
+}
+
+.pd-mode {
+  flex: 0 0 auto;
+  min-width: 12.5rem;
+}
+
+.pd-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  margin: -0.35rem 0 1.1rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--hairline);
+  border-radius: 16px;
+  background: var(--surface);
+}
+
+.pd-bar.is-delta {
+  border-color: transparent;
+  background: var(--accent-soft);
+}
+
+.pd-delta-kicker {
+  margin: 0 0 0.45rem;
+  color: var(--text-secondary);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pd-delta-kicker + app-ui-table {
+  margin-bottom: 1.15rem;
+}
+
+.pd-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.pd-row-kicker {
+  min-width: 3.2rem;
+  color: var(--text-secondary);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pd-row .pick-btn {
+  min-width: 0;
+  min-height: 1.85rem;
+  gap: 0.5rem;
+  padding: 0.2rem 0.7rem;
+  border-radius: 980px;
+}
+
+.pd-row .pick-val {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.pd-row .pick-role {
+  margin-right: 0.28rem;
+  color: var(--text-secondary);
+}
+
+.pd-row .pick-list {
+  min-width: 8.5rem;
+}
+
+.pick-pair {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.pick-vs {
+  color: var(--text-secondary);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.mod-title .pick-role {
+  margin-right: 0.28rem;
+  color: var(--text-secondary);
 }
 
 .mod-title .pick-btn {
@@ -305,7 +400,7 @@ h2 {
 }
 
 .sheet {
-  max-height: min(68vh, calc(100dvh - 14rem));
+  max-height: min(50vh, calc(100dvh - 20rem));
   overflow: auto;
   border: 1px solid var(--hairline);
   border-radius: var(--radius-lg);
@@ -327,7 +422,7 @@ h2 {
 
 .grid th,
 .grid td {
-  padding: 0.7rem 0.85rem;
+  padding: 0.38rem 0.5rem;
   border-bottom: 1px solid var(--hairline);
   text-align: left;
   vertical-align: middle;
@@ -338,19 +433,19 @@ h2 {
   top: 0;
   z-index: 4;
   overflow: visible;
-  min-width: 9.5rem;
+  min-width: 6rem;
   background: var(--surface);
   box-shadow: 0 1px 0 var(--hairline);
   color: #3a3a3c;
-  font-size: 0.72rem;
+  font-size: 0.62rem;
   font-weight: 600;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   white-space: nowrap;
 }
 
 .grid td {
-  font-size: 0.9rem;
+  font-size: 0.78rem;
 }
 
 .grid tbody tr:last-child td {

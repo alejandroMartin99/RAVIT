@@ -141,7 +141,7 @@ export class LandingPage implements OnInit {
   }
 
   select(ac: Aircraft): void {
-    void this.router.navigate(['/aircraft', ac.id]);
+    void this.router.navigate(['/aircraft', padMsn(ac.msn)]);
   }
 
   openAdd(): void {

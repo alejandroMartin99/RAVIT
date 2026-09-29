@@ -44,6 +44,11 @@ def discard_pd(aircraft_id: str, version: str) -> dict:
     return pd_store.discard_pending(aircraft_id, version)
 
 
+@router.get("/compare")
+def compare_pd(aircraft_id: str, new: str, old: str) -> dict:
+    return pd_store.compare_issues(aircraft_id, new, old)
+
+
 @router.get("/{issue}")
 def get_pd(aircraft_id: str, issue: str) -> dict:
     return pd_store.get_issue(aircraft_id, issue)

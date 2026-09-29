@@ -105,66 +105,10 @@
         </ng-template>
         <ng-template uiTableCell="actions" let-item>
           <div class="acts">
-            @if (item.status === 'ok' && !item.current) {
-              <button type="button" class="icon-act" data-tip="Use on this aircraft" aria-label="Use on this aircraft" (click)="useOnAircraft(item, $event)">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path
-                    fill="currentColor"
-                    d="M9.2 16.2 L4.8 11.8 L6.2 10.4 L9.2 13.4 L17.8 4.8 L19.2 6.2 Z"
-                  />
-                </svg>
-              </button>
-            } @else {
-              <span class="icon-act is-off" data-tip="Use on this aircraft" aria-label="Already assigned">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path
-                    fill="currentColor"
-                    d="M9.2 16.2 L4.8 11.8 L6.2 10.4 L9.2 13.4 L17.8 4.8 L19.2 6.2 Z"
-                  />
-                </svg>
-              </span>
-            }
-            @if (item.current) {
-              <a
-                class="icon-act"
-                [routerLink]="viewPath()"
-                aria-label="View"
-                data-tip="View"
-                (click)="$event.stopPropagation()"
-              >
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path
-                    fill="currentColor"
-                    d="M12 5.25c-4.9 0-8.25 5.4-9.36 7.13a.75.75 0 0 0 0 .74C3.75 14.85 7.1 20.25 12 20.25s8.25-5.4 9.36-7.13a.75.75 0 0 0 0-.74C20.25 9.15 16.9 5.25 12 5.25zm0 13.5c-3.86 0-6.74-4.05-7.8-5.75C5.26 11.3 8.14 7.25 12 7.25s6.74 4.05 7.8 5.75c-1.06 1.7-3.94 5.75-7.8 5.75zM12 8.5A3.5 3.5 0 1 0 12 15.5 3.5 3.5 0 0 0 12 8.5zm0 5.5a2 2 0 1 1 0-4 2 2 0 1 1 0 4z"
-                  />
-                </svg>
-              </a>
-            } @else {
-              <span class="icon-act is-off" data-tip="View" aria-label="View not available">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path
-                    fill="currentColor"
-                    d="M12 5.25c-4.9 0-8.25 5.4-9.36 7.13a.75.75 0 0 0 0 .74C3.75 14.85 7.1 20.25 12 20.25s8.25-5.4 9.36-7.13a.75.75 0 0 0 0-.74C20.25 9.15 16.9 5.25 12 5.25zm0 13.5c-3.86 0-6.74-4.05-7.8-5.75C5.26 11.3 8.14 7.25 12 7.25s6.74 4.05 7.8 5.75c-1.06 1.7-3.94 5.75-7.8 5.75zM12 8.5A3.5 3.5 0 1 0 12 15.5 3.5 3.5 0 0 0 12 8.5zm0 5.5a2 2 0 1 1 0-4 2 2 0 1 1 0 4z"
-                  />
-                </svg>
-              </span>
-            }
-            <button type="button" class="icon-act" data-tip="Download" aria-label="Download" (click)="download(item, $event)">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  fill="currentColor"
-                  d="M12 3.25a.75.75 0 0 1 .75.75v9.19l2.72-2.72a.75.75 0 1 1 1.06 1.06l-4 4a.75.75 0 0 1-1.06 0l-4-4a.75.75 0 0 1 1.06-1.06l2.72 2.72V4A.75.75 0 0 1 12 3.25zM5.75 18.5A.75.75 0 0 1 6.5 17.75h11a.75.75 0 0 1 0 1.5h-11a.75.75 0 0 1-.75-.75z"
-                />
-              </svg>
-            </button>
-            <button type="button" class="icon-del" data-tip="Delete" aria-label="Delete" (click)="askDelete(item, $event)">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  fill="currentColor"
-                  d="M9 3.75A1.75 1.75 0 0 1 10.75 2h2.5A1.75 1.75 0 0 1 15 3.75V5h4.25a.75.75 0 0 1 0 1.5H19v12.75A2.75 2.75 0 0 1 16.25 22h-8.5A2.75 2.75 0 0 1 5 19.25V6.5h-.25a.75.75 0 0 1 0-1.5H9V3.75zm1.5.25v1h3V4h-3zM6.5 6.5v12.75c0 .69.56 1.25 1.25 1.25h8.5c.69 0 1.25-.56 1.25-1.25V6.5h-11zM10 10a.75.75 0 0 1 .75.75v6.5a.75.75 0 0 1-1.5 0v-6.5A.75.75 0 0 1 10 10zm4.75.75a.75.75 0 0 0-1.5 0v6.5a.75.75 0 0 0 1.5 0v-6.5z"
-                />
-              </svg>
-            </button>
+            <app-ui-icon-act name="apply" tip="Use on this aircraft" [off]="item.status !== 'ok' || item.current" (act)="useOnAircraft(item, $event)" />
+            <app-ui-icon-act name="view" tip="View" [off]="!item.current" [link]="item.current ? viewPath() : null" (act)="$event.stopPropagation()" />
+            <app-ui-icon-act name="download" tip="Download" (act)="download(item, $event)" />
+            <app-ui-icon-act name="delete" tip="Delete" [danger]="true" (act)="askDelete(item, $event)" />
           </div>
         </ng-template>
       </app-ui-table>
@@ -195,44 +139,20 @@
           </ng-template>
           <ng-template uiTableCell="actions" let-item>
             <div class="acts">
-              @if (!item.current) {
-                <button type="button" class="icon-act" data-tip="Use on this aircraft" aria-label="Use on this aircraft" (click)="useOnAircraft(item, $event)">
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path
-                      fill="currentColor"
-                      d="M9.2 16.2 L4.8 11.8 L6.2 10.4 L9.2 13.4 L17.8 4.8 L19.2 6.2 Z"
-                    />
-                  </svg>
-                </button>
-              } @else {
-                <span class="icon-act is-off" data-tip="Use on this aircraft" aria-label="Already assigned">
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path
-                      fill="currentColor"
-                      d="M9.2 16.2 L4.8 11.8 L6.2 10.4 L9.2 13.4 L17.8 4.8 L19.2 6.2 Z"
-                    />
-                  </svg>
-                </span>
-              }
-              <button type="button" class="icon-act" data-tip="Download" aria-label="Download" (click)="download(item, $event)">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path
-                    fill="currentColor"
-                    d="M12 3.25a.75.75 0 0 1 .75.75v9.19l2.72-2.72a.75.75 0 1 1 1.06 1.06l-4 4a.75.75 0 0 1-1.06 0l-4-4a.75.75 0 0 1 1.06-1.06l2.72 2.72V4A.75.75 0 0 1 12 3.25zM5.75 18.5A.75.75 0 0 1 6.5 17.75h11a.75.75 0 0 1 0 1.5h-11a.75.75 0 0 1-.75-.75z"
-                  />
-                </svg>
-              </button>
+              <app-ui-icon-act name="apply" tip="Use on this aircraft" [off]="item.current" (act)="useOnAircraft(item, $event)" />
+              <app-ui-icon-act name="download" tip="Download" (act)="download(item, $event)" />
             </div>
           </ng-template>
         </app-ui-table>
       }
     } @else if (!loading() && !uploading() && !steps().length) {
-      <article class="empty">
-        <p class="step">No APC loaded</p>
-        <h2>Upload an APC source for this air force</h2>
-        <p class="hint">The file is stored in the fleet library. You can then assign it to this aircraft or to any other aircraft in the same air force.</p>
+      <app-ui-empty
+        kicker="No APC loaded"
+        title="Upload an APC source for this air force"
+        hint="The file is stored in the fleet library. You can then assign it to this aircraft or to any other aircraft in the same air force."
+      >
         <button type="button" class="go" (click)="openPicker()">Upload APC</button>
-      </article>
+      </app-ui-empty>
     }
   } @else {
     @if (!loading() && rows().length) {
@@ -249,12 +169,13 @@
       </div>
       <app-ui-table [columns]="dataCols()" [rows]="rows()" [trackBy]="trackRow" />
     } @else if (!loading()) {
-      <article class="empty">
-        <p class="step">No APC assigned</p>
-        <h2>Assign an APC to this aircraft</h2>
-        <p class="hint">This aircraft shows the APC assigned to it. Upload a new file or pick one from the fleet library in R.D.G. Source ingestion.</p>
+      <app-ui-empty
+        kicker="No APC assigned"
+        title="Assign an APC to this aircraft"
+        hint="This aircraft shows the APC assigned to it. Upload a new file or pick one from the fleet library in R.D.G. Source ingestion."
+      >
         <a class="go" [routerLink]="ingestPath()">Assign APC</a>
-      </article>
+      </app-ui-empty>
     }
   }
 </section>
