@@ -35,16 +35,14 @@
         </div>
       </ng-template>
       <ng-template #sourceMarks>
-        <div class="pd-marks" role="list" aria-label="Required sources">
+        <ul class="pd-marks">
           @for (item of genSourceList(); track item.key) {
-            <span
-              role="listitem"
-              class="pd-mark"
-              [class.is-off]="!item.loaded"
-              [attr.aria-label]="item.loaded ? 'Ready' : 'Missing'"
-            ></span>
+            <li class="pd-mark" [class.is-off]="!item.loaded">
+              <span class="pd-mark-code">{{ item.label }}</span>
+              <span class="pd-mark-flag" aria-hidden="true">{{ item.loaded ? '✓' : '✕' }}</span>
+            </li>
           }
-        </div>
+        </ul>
       </ng-template>
       <ng-template #twoIssuePick>
         <div class="pick-pair">
@@ -163,27 +161,19 @@
                 }
               </app-ui-empty>
             } @else if (mode() === 'delta') {
-              <div class="pd-split">
-                <div class="pd-split-main">
-                  @if (!deltaNew().length && !deltaDiscard().length && !deltaChange().length) {
-                    <app-ui-empty kicker="Compare" title="No differences between these issues" hint="Shared fields match. The newest issue column is not compared field by field." />
-                  }
-                  @if (deltaLineRows().length) {
-                    <p class="pd-delta-kicker">{{ deltaLineNote() }}</p>
-                    <app-ui-table [framed]="false" [columns]="deltaViewCols()" [rows]="deltaLineRows()" [trackBy]="trackCompare" [rowClass]="compareRowClass" />
-                  }
-                  @if (deltaChange().length) {
-                    <p class="pd-delta-kicker">{{ deltaChange().length === 1 ? '1 change' : deltaChange().length + ' changes' }}</p>
-                    <app-ui-table [framed]="false" [columns]="deltaChangeCols()" [rows]="deltaChange()" [trackBy]="trackCompare" empty="No field changes in the selected columns." />
-                  }
-                </div>
-                <ng-container *ngTemplateOutlet="sourceMarks" />
-              </div>
+              @if (!deltaNew().length && !deltaDiscard().length && !deltaChange().length) {
+                <app-ui-empty kicker="Compare" title="No differences between these issues" hint="Shared fields match. The newest issue column is not compared field by field." />
+              }
+              @if (deltaLineRows().length) {
+                <p class="pd-delta-kicker">{{ deltaLineNote() }}</p>
+                <app-ui-table [framed]="false" [columns]="deltaViewCols()" [rows]="deltaLineRows()" [trackBy]="trackCompare" [rowClass]="compareRowClass" />
+              }
+              @if (deltaChange().length) {
+                <p class="pd-delta-kicker">{{ deltaChange().length === 1 ? '1 change' : deltaChange().length + ' changes' }}</p>
+                <app-ui-table [framed]="false" [columns]="deltaChangeCols()" [rows]="deltaChange()" [trackBy]="trackCompare" empty="No field changes in the selected columns." />
+              }
             } @else if (issue()) {
-              <div class="pd-split">
-                <app-ui-table [framed]="false" [columns]="pdCols()" [rows]="issue()!.rows" [trackBy]="trackRow" />
-                <ng-container *ngTemplateOutlet="sourceMarks" />
-              </div>
+              <app-ui-table [framed]="false" [columns]="pdCols()" [rows]="issue()!.rows" [trackBy]="trackRow" />
             } @else {
               <app-ui-empty
                 kicker="No Program Directive loaded"
@@ -221,8 +211,9 @@
             </ol>
             @if (genStep() === 1) {
               <div class="pd-split">
-                <div class="pd-gen-pick">
-                  <div class="pd-choices">
+                <div class="pd-split-col">
+                  <p class="pd-split-label">Configure</p>
+                  <div class="pd-choices pd-gen-choices">
                     <button type="button" class="pd-choice" [class.is-on]="genSource() === 'full'" (click)="setGenSource('full')">
                       <app-ui-icon name="view" />
                       <span>
@@ -238,18 +229,21 @@
                       </span>
                     </button>
                   </div>
-                  @if (genSource() && issues().length) {
-                    <div class="pd-row">
-                      @if (genSource() === 'full') {
-                        <ng-container *ngTemplateOutlet="oneIssuePick" />
-                      } @else {
-                        <ng-container *ngTemplateOutlet="twoIssuePick" />
-                      }
-                    </div>
+                </div>
+                <div class="pd-split-col">
+                  <p class="pd-split-label">Required sources</p>
+                  <ng-container *ngTemplateOutlet="sourceMarks" />
+                </div>
+              </div>
+              @if (genSource() && issues().length) {
+                <div class="pd-row">
+                  @if (genSource() === 'full') {
+                    <ng-container *ngTemplateOutlet="oneIssuePick" />
+                  } @else {
+                    <ng-container *ngTemplateOutlet="twoIssuePick" />
                   }
                 </div>
-                <ng-container *ngTemplateOutlet="sourceMarks" />
-              </div>
+              }
               @if (genError(); as message) {
                 <p class="banner">{{ message }}</p>
               }
