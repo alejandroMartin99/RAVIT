@@ -1,4 +1,3 @@
-import { DatePipe } from '@angular/common';
 import { Component, ElementRef, OnInit, computed, inject, signal, viewChild } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -6,14 +5,13 @@ import { AccessService, AccessTable } from '../../../services/access.service';
 import { AircraftService } from '../../../services/aircraft.service';
 import { WorkspaceService } from '../../../services/workspace.service';
 import { ModuleIconComponent } from '../../../shared/ui/module-icon/module-icon.component';
-import { UiButtonComponent, UiEmptyComponent, UiHelpComponent } from '../../../shared/ui';
+import { UiButtonComponent, UiHelpComponent } from '../../../shared/ui';
 import { enterAircraft, routeMsn } from '../../_shared/aircraft-context';
 
 @Component({
   selector: 'app-connect-to-access',
   standalone: true,
-  imports: [ModuleIconComponent, UiButtonComponent, UiEmptyComponent, UiHelpComponent],
-  providers: [DatePipe],
+  imports: [ModuleIconComponent, UiButtonComponent, UiHelpComponent],
   templateUrl: './connect-to-access.page.html',
   styleUrl: '../../_shared/source-page.scss',
 })
@@ -23,8 +21,8 @@ export class ConnectToAccessPage implements OnInit {
   private readonly aircraftApi = inject(AircraftService);
   private readonly workspace = inject(WorkspaceService);
   private readonly accessApi = inject(AccessService);
-  private readonly dates = inject(DatePipe);
   private readonly picker = viewChild<ElementRef<HTMLInputElement>>('picker');
+  readonly skelRows = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
   private readonly data = toSignal(this.route.data, { initialValue: this.route.snapshot.data });
   readonly aircraftId = routeMsn(this.route);
@@ -42,7 +40,6 @@ export class ConnectToAccessPage implements OnInit {
   readonly error = signal<string | null>(null);
   private pending: File | null = null;
 
-  readonly stored = computed(() => this.tables().filter((item) => item.current));
   readonly canAccept = computed(() => {
     const scan = this.scan();
     if (!scan || this.busy()) {
@@ -68,6 +65,7 @@ export class ConnectToAccessPage implements OnInit {
       return;
     }
     this.error.set(null);
+    this.scan.set(null);
     this.busy.set(true);
     this.pending = file;
     this.fileName.set(file.name);
@@ -105,10 +103,6 @@ export class ConnectToAccessPage implements OnInit {
     return !!item.current && item.rows > 0;
   }
 
-  found(items: AccessTable[]): AccessTable[] {
-    return items.filter((item) => item.in_file);
-  }
-
   note(item: AccessTable): string {
     if (!item.in_file) {
       return 'Not in this file';
@@ -117,11 +111,6 @@ export class ConnectToAccessPage implements OnInit {
       return `Overwrite ${item.rows} stored rows?`;
     }
     return item.current ? 'Stored copy is empty' : 'New for this aircraft';
-  }
-
-  storedNote(item: AccessTable): string {
-    const when = item.updated_at ? this.dates.transform(item.updated_at, 'd MMM y, HH:mm') : null;
-    return [item.rows ? `${item.rows} rows` : 'Empty', item.source_file, when].filter(Boolean).join(' · ');
   }
 
   discard(): void {

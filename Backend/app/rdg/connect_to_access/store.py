@@ -38,7 +38,7 @@ def _folder_name(item: dict) -> str:
 
 
 def _current_path(folder: str, item: dict) -> Path:
-    return DATA_DIR / "fleet" / folder / "Access" / _folder_name(item) / "current.json"
+    return DATA_DIR / "fleet" / folder / _folder_name(item) / "current.json"
 
 
 def get_table(aircraft_id: str, table_id: str) -> dict | None:
@@ -87,15 +87,9 @@ def _list_file_tables(path: Path) -> list[str]:
     names = _odbc_tables(path)
     if names is not None:
         return names
-    names = _parser_tables(path)
-    if names is not None:
-        return names
-    names = _dao_tables(path)
-    if names is not None:
-        return names
     raise HTTPException(
         status_code=400,
-        detail="Could not read this Access database. Install the Microsoft Access Driver or use a .mdb file.",
+        detail="Could not read this Access database. Install pyodbc and the Microsoft Access Driver (*.mdb, *.accdb).",
     )
 
 
@@ -111,25 +105,16 @@ def _odbc_tables(path: Path) -> list[str] | None:
             autocommit=True,
         )
         cursor = conn.cursor()
-        return [row.table_name for row in cursor.tables(tableType="TABLE") if row.table_name]
+        return [
+            row.table_name
+            for row in cursor.tables(tableType="TABLE")
+            if row.table_name and not row.table_name.startswith(("MSys", "~"))
+        ]
     except Exception:  # noqa: BLE001
         return None
     finally:
         if conn is not None:
             conn.close()
-
-
-def _parser_tables(path: Path) -> list[str] | None:
-    try:
-        from access_parser import AccessParser
-    except ImportError:
-        return None
-    try:
-        parser = AccessParser(str(path))
-        catalog = parser.catalog or {}
-        return list(catalog.keys())
-    except Exception:  # noqa: BLE001
-        return None
 
 
 def _odbc_rows(path: Path, table: str) -> list[dict] | None:
@@ -157,84 +142,8 @@ def _odbc_rows(path: Path, table: str) -> list[dict] | None:
             conn.close()
 
 
-def _parser_rows(path: Path, table: str) -> list[dict] | None:
-    try:
-        from access_parser import AccessParser
-    except ImportError:
-        return None
-    try:
-        parsed = AccessParser(str(path)).parse_table(table) or {}
-        cols = list(parsed.keys())
-        size = len(next(iter(parsed.values()), []))
-        rows = []
-        for index in range(size):
-            rows.append({col: "" if parsed[col][index] is None else str(parsed[col][index]) for col in cols})
-        return rows
-    except Exception:  # noqa: BLE001
-        return None
-
-
-def _dao_db(path: Path):
-    import win32com.client
-
-    return win32com.client.Dispatch("DAO.DBEngine.120").OpenDatabase(str(path))
-
-
-def _dao_cell(field) -> str:
-    try:
-        value = field.Value
-    except Exception:  # noqa: BLE001
-        return ""
-    return "" if value is None else str(value)
-
-
-def _dao_tables(path: Path) -> list[str] | None:
-    try:
-        import win32com.client  # noqa: F401
-    except ImportError:
-        return None
-    db = None
-    try:
-        db = _dao_db(path)
-        return [table.Name for table in db.TableDefs if table.Name and not table.Name.startswith(("MSys", "~"))]
-    except Exception:  # noqa: BLE001
-        return None
-    finally:
-        if db is not None:
-            db.Close()
-
-
-def _dao_rows(path: Path, table: str) -> list[dict] | None:
-    try:
-        import win32com.client  # noqa: F401
-    except ImportError:
-        return None
-    db = None
-    try:
-        db = _dao_db(path)
-        record = db.OpenRecordset(table)
-        cols = [record.Fields(index).Name for index in range(int(record.Fields.Count))]
-        rows = []
-        while not record.EOF:
-            rows.append({col: _dao_cell(record.Fields(index)) for index, col in enumerate(cols)})
-            record.MoveNext()
-        record.Close()
-        return rows
-    except Exception:  # noqa: BLE001
-        return None
-    finally:
-        if db is not None:
-            db.Close()
-
-
 def _read_rows(path: Path, table: str) -> list[dict]:
     rows = _odbc_rows(path, table)
-    if rows is not None:
-        return rows
-    rows = _parser_rows(path, table)
-    if rows is not None:
-        return rows
-    rows = _dao_rows(path, table)
     if rows is not None:
         return rows
     raise HTTPException(status_code=400, detail=f"Could not read Access table {table}.")

@@ -1,0 +1,19 @@
+{
+  "id": "TT_BRACKDOWN",
+  "label": "tt_brackdown",
+  "source_table": "tt_brackdown",
+  "source_file": "follow-up.accdb",
+  "updated_at": "2026-10-07T19:08:51.813771+00:00",
+  "rows": [
+    {
+      "TaskRef": "A400M-52-11",
+      "Breakdown": "Remove and install",
+      "Hours": "4.0"
+    },
+    {
+      "TaskRef": "A400M-27-51",
+      "Breakdown": "Functional test",
+      "Hours": "1.5"
+    }
+  ]
+}

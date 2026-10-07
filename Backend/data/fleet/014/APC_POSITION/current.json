@@ -1,0 +1,17 @@
+{
+  "id": "APC_POSITION",
+  "label": "APC_POSITION",
+  "source_table": "APC_POSITION",
+  "source_file": "follow-up.accdb",
+  "updated_at": "2026-10-07T19:08:51.046442+00:00",
+  "rows": [
+    {
+      "FIN": "52-11-01",
+      "Position": "LH"
+    },
+    {
+      "FIN": "27-51-02",
+      "Position": "RH"
+    }
+  ]
+}

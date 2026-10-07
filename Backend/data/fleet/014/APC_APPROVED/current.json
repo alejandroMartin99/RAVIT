@@ -1,0 +1,19 @@
+{
+  "id": "APC_APPROVED",
+  "label": "APC_APPROVED",
+  "source_table": "APC_APPROVED",
+  "source_file": "follow-up.accdb",
+  "updated_at": "2026-10-07T19:08:50.858683+00:00",
+  "rows": [
+    {
+      "FIN": "52-11-01",
+      "PNR": "ABS1234",
+      "Description": "Hydraulic pump"
+    },
+    {
+      "FIN": "27-51-02",
+      "PNR": "ABS5678",
+      "Description": "Flap actuator"
+    }
+  ]
+}

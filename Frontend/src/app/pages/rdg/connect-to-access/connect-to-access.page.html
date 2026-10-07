@@ -22,7 +22,7 @@
     (change)="onPick($event)"
   />
 
-  <div class="toolbar">
+  <div class="toolbar access-pick">
     <p class="hint tight">
       @if (fileName(); as name) {
         {{ name }}
@@ -36,21 +36,23 @@
   </div>
 
   @if (scan(); as items) {
-    <p class="pd-delta-kicker">Detected in this file</p>
+    <p class="pd-delta-kicker">Tables to import</p>
     <div class="access-list">
-      @for (item of found(items); track item.id) {
-        <label class="access-row">
+      @for (item of items; track item.id) {
+        <label class="access-row" [class.is-off]="!item.in_file">
           <input
             type="checkbox"
             [checked]="selected().has(item.id)"
-            [disabled]="busy()"
+            [disabled]="busy() || !item.in_file"
             (change)="toggle(item.id, item.in_file)"
           />
           <span class="access-meta">
             <p class="access-name">{{ item.label }}</p>
             <p class="access-note">{{ note(item) }}</p>
           </span>
-          @if (occupied(item)) {
+          @if (!item.in_file) {
+            <span class="tag">Missing</span>
+          } @else if (occupied(item)) {
             <span class="tag">Overwrite</span>
           } @else if (item.current) {
             <span class="tag">Empty</span>
@@ -58,34 +60,24 @@
             <span class="tag">New</span>
           }
         </label>
-      } @empty {
-        <p class="pd-expand-empty">None of the F-Up tables are in this file.</p>
       }
     </div>
     <div class="actions">
       <app-ui-button variant="ghost" [disabled]="busy()" (click)="discard()">Discard</app-ui-button>
       <app-ui-button [disabled]="!canAccept()" (click)="accept()">Accept</app-ui-button>
     </div>
-  } @else if (!loading()) {
-    @if (stored().length) {
-      <p class="pd-delta-kicker">Stored for this aircraft</p>
-      <div class="access-list">
-        @for (item of stored(); track item.id) {
-          <div class="access-row">
-            <span class="access-meta">
-              <p class="access-name">{{ item.label }}</p>
-              <p class="access-note">{{ storedNote(item) }}</p>
-            </span>
-            <span class="tag">Stored</span>
-          </div>
-        }
-      </div>
-    } @else {
-      <app-ui-empty
-        kicker="Connect to Access"
-        title="No Access tables stored"
-        hint="Select an F-Up .mdb or .accdb. Detected tables fill empty stores; occupied ones ask before overwrite."
-      />
-    }
+  } @else if (busy()) {
+    <p class="pd-delta-kicker">Tables to import</p>
+    <div class="access-list" aria-busy="true" aria-live="polite">
+      @for (row of skelRows; track row) {
+        <div class="access-row">
+          <span class="skel skel-box"></span>
+          <span class="access-meta">
+            <span class="skel"></span>
+            <span class="skel skel-note"></span>
+          </span>
+        </div>
+      }
+    </div>
   }
 </section>

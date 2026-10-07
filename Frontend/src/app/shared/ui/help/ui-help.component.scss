@@ -24,14 +24,21 @@
 
 .lead {
   margin: 0;
+  max-width: 100%;
   color: var(--text);
   font-size: 0.95rem;
   line-height: 1.45;
+  overflow-wrap: anywhere;
 }
 
 .block {
   display: grid;
   gap: 0.4rem;
+  min-width: 0;
+}
+
+.block > * {
+  min-width: 0;
 }
 
 h3 {
@@ -46,9 +53,11 @@ h3 {
 .block p,
 .block li {
   margin: 0;
+  max-width: 100%;
   color: var(--text);
   font-size: 0.9rem;
   line-height: 1.45;
+  overflow-wrap: anywhere;
 }
 
 ul {

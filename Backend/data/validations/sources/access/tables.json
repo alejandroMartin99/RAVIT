@@ -11,6 +11,7 @@
     { "id": "APC_POSITIONS", "label": "APC_POSITIONS" },
     { "id": "MASTER_TRAZABILIDAD", "label": "master trazabilidad" },
     { "id": "OMP_MAINTENANCE_TASK", "label": "OMP_MaintenanceTask" },
+    { "id": "ACR", "label": "acr" },
     { "id": "TT_BRACKDOWN", "label": "tt_brackdown", "aliases": ["tt_breakdown"] }
   ]
 }

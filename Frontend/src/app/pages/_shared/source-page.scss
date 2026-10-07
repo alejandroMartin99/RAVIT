@@ -1168,6 +1168,17 @@ h2 {
   }
 }
 
+.access-pick {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.access-pick .hint.tight {
+  white-space: normal;
+  max-width: 42rem;
+}
+
 .access-list {
   display: flex;
   flex-direction: column;
@@ -1191,6 +1202,18 @@ h2 {
 
 .access-row input {
   flex: 0 0 auto;
+}
+
+.access-row .skel-box {
+  flex: 0 0 auto;
+  width: 0.95rem;
+  height: 0.95rem;
+  border-radius: 3px;
+}
+
+.access-row .skel-note {
+  width: 46%;
+  margin-top: 0.35rem;
 }
 
 .access-meta {

@@ -14,19 +14,27 @@
   border-radius: var(--radius-lg);
   background: var(--surface);
   box-shadow: var(--shadow-float);
+  white-space: normal;
   animation: rise 0.28s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .sheet.is-wide {
   display: flex;
   flex-direction: column;
-  width: min(40rem, 100%);
+  width: min(56rem, calc(100vw - 2.5rem));
   max-height: min(44rem, calc(100vh - 2.5rem));
   overflow: hidden;
 }
 
 .sheet.is-wide .body {
-  overflow: auto;
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+}
+
+.sheet.is-wide .body > * {
+  min-width: 0;
 }
 
 .head {

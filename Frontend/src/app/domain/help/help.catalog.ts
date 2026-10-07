@@ -204,14 +204,14 @@ export const HELP_GUIDES: Record<string, HelpGuide> = {
         items: [
           'Only tables in the Access catalog are ingested. Extra tables in the file are ignored.',
           'Matching uses the catalog id, label and aliases (case and punctuation ignored).',
-          'F-Up tables: WO_main_database, RI_main_database, SW_main_database, Ageing_main_database, APC_APPROVED, APC_POSITION, APC_POSITIONS, master trazabilidad, OMP_MaintenanceTask, tt_brackdown.',
+          'F-Up tables: WO_main_database, RI_main_database, SW_main_database, Ageing_main_database, APC_APPROVED, APC_POSITION, APC_POSITIONS, master trazabilidad, OMP_MaintenanceTask, acr, tt_brackdown.',
           'Empty or missing stored tables are selected to ingest. Occupied tables stay unchecked until you confirm overwrite.',
         ],
       },
       {
         heading: 'Storage',
         items: [
-          'Tables extracted from Access are stored next to APC, not in the .mdb: data/fleet/{MSN}/Access/{table}/current.json.',
+          'Tables extracted from Access are stored next to APC and PD: data/fleet/{MSN}/{table}/current.json.',
           'Accept overwrites current.json for every selected table.',
         ],
       },
