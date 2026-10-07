@@ -90,6 +90,9 @@ def _list_file_tables(path: Path) -> list[str]:
     names = _parser_tables(path)
     if names is not None:
         return names
+    names = _dao_tables(path)
+    if names is not None:
+        return names
     raise HTTPException(
         status_code=400,
         detail="Could not read this Access database. Install the Microsoft Access Driver or use a .mdb file.",
@@ -171,11 +174,67 @@ def _parser_rows(path: Path, table: str) -> list[dict] | None:
         return None
 
 
+def _dao_db(path: Path):
+    import win32com.client
+
+    return win32com.client.Dispatch("DAO.DBEngine.120").OpenDatabase(str(path))
+
+
+def _dao_cell(field) -> str:
+    try:
+        value = field.Value
+    except Exception:  # noqa: BLE001
+        return ""
+    return "" if value is None else str(value)
+
+
+def _dao_tables(path: Path) -> list[str] | None:
+    try:
+        import win32com.client  # noqa: F401
+    except ImportError:
+        return None
+    db = None
+    try:
+        db = _dao_db(path)
+        return [table.Name for table in db.TableDefs if table.Name and not table.Name.startswith(("MSys", "~"))]
+    except Exception:  # noqa: BLE001
+        return None
+    finally:
+        if db is not None:
+            db.Close()
+
+
+def _dao_rows(path: Path, table: str) -> list[dict] | None:
+    try:
+        import win32com.client  # noqa: F401
+    except ImportError:
+        return None
+    db = None
+    try:
+        db = _dao_db(path)
+        record = db.OpenRecordset(table)
+        cols = [record.Fields(index).Name for index in range(int(record.Fields.Count))]
+        rows = []
+        while not record.EOF:
+            rows.append({col: _dao_cell(record.Fields(index)) for index, col in enumerate(cols)})
+            record.MoveNext()
+        record.Close()
+        return rows
+    except Exception:  # noqa: BLE001
+        return None
+    finally:
+        if db is not None:
+            db.Close()
+
+
 def _read_rows(path: Path, table: str) -> list[dict]:
     rows = _odbc_rows(path, table)
     if rows is not None:
         return rows
     rows = _parser_rows(path, table)
+    if rows is not None:
+        return rows
+    rows = _dao_rows(path, table)
     if rows is not None:
         return rows
     raise HTTPException(status_code=400, detail=f"Could not read Access table {table}.")
@@ -227,17 +286,17 @@ def commit_access(aircraft_id: str, filename: str, payload: bytes, table_ids: li
     unknown = wanted - set(catalog)
     if unknown:
         raise HTTPException(status_code=400, detail="Unknown tables in the ingest list.")
-    path = _write_upload(suffix, payload)
+    upload = _write_upload(suffix, payload)
     saved = []
     try:
-        file_tables = _list_file_tables(path)
+        file_tables = _list_file_tables(upload)
         current = {item["id"]: item for item in current_tables(aircraft_id)["tables"]}
         for table_id in [item["id"] for item in load_catalog() if item["id"] in wanted]:
             item = catalog[table_id]
             file_name = _match(item, file_tables)
             if not file_name:
                 raise HTTPException(status_code=400, detail=f"Not in this Access file: {item['label']}.")
-            rows = _read_rows(path, file_name)
+            rows = _read_rows(upload, file_name)
             body = {
                 "id": item["id"],
                 "label": item["label"],
@@ -246,9 +305,9 @@ def commit_access(aircraft_id: str, filename: str, payload: bytes, table_ids: li
                 "updated_at": _now(),
                 "rows": rows,
             }
-            path = _current_path(aircraft.folder, item)
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(json.dumps(body, indent=2), encoding="utf-8")
+            dest = _current_path(aircraft.folder, item)
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            dest.write_text(json.dumps(body, indent=2), encoding="utf-8")
             saved.append(
                 {
                     "id": table_id,
@@ -258,5 +317,5 @@ def commit_access(aircraft_id: str, filename: str, payload: bytes, table_ids: li
                 }
             )
     finally:
-        path.unlink(missing_ok=True)
+        upload.unlink(missing_ok=True)
     return {"ok": True, "file": filename, "saved": saved, **current_tables(aircraft_id)}

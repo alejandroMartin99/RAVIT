@@ -1,0 +1,1 @@
+import{P as a,q as e}from"./chunk-YMM5K4TG.js";var s=(()=>{class t{constructor(){this.aircraft=a(null)}enter(r){this.aircraft.set(r)}leave(){this.aircraft.set(null)}static{this.\u0275fac=function(i){return new(i||t)}}static{this.\u0275prov=e({token:t,factory:t.\u0275fac,providedIn:"root"})}}return t})();export{s as a};
