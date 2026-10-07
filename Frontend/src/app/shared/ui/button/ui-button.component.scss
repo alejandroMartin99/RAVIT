@@ -6,7 +6,7 @@ button {
   min-height: 2.5rem;
   padding: 0 1rem;
   border: 0;
-  border-radius: 980px;
+  border-radius: var(--radius);
   font: inherit;
   font-size: 0.94rem;
   font-weight: 500;

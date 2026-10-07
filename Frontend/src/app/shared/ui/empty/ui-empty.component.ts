@@ -16,7 +16,7 @@ import { Component, input } from '@angular/core';
       padding: 1.5rem;
       border: 1px solid var(--hairline);
       border-radius: var(--radius-lg);
-      background: var(--surface);
+      background: var(--surface-raised);
     }
     .step {
       margin: 0;
@@ -35,6 +35,15 @@ import { Component, input } from '@angular/core';
     .hint {
       margin: 0 0 1.1rem;
       color: var(--text-secondary);
+    }
+    :host-context(.pd-expand-body) .empty {
+      padding: 0.2rem 0 0.35rem;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+    }
+    :host-context(.pd-expand-body) h2 {
+      font-size: 1.05rem;
     }
   `,
 })

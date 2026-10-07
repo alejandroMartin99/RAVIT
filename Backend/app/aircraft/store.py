@@ -5,10 +5,11 @@ from pathlib import Path
 
 from fastapi import HTTPException
 
-from app.api.schemas.aircraft import AircraftIn, AircraftOut, AircraftPatch
+from app.aircraft.schemas import AircraftIn, AircraftOut, AircraftPatch
 from app.catalog.fleet import CHIEFS
+from app.core.paths import DATA_DIR
 
-_ROOT = Path(__file__).resolve().parent.parent.parent / "data" / "fleet"
+_ROOT = DATA_DIR / "fleet"
 _ID_NS = uuid.NAMESPACE_DNS
 
 

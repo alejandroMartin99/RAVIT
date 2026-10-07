@@ -1,5 +1,4 @@
 node_modules/
-dist/
 .angular/
 .vscode/
 
@@ -12,6 +11,8 @@ __pycache__/
 .env
 Backend/data/aircraft.json
 *.xlsx
+*.mdb
+*.accdb
 *.log
 .DS_Store
 Thumbs.db

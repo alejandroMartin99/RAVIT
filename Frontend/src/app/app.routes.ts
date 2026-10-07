@@ -9,6 +9,8 @@ const pages = {
   aircraft: () => import('./pages/aircraft/aircraft.page').then((m) => m.AircraftPage),
   pd: () => import('./pages/rdg/source-ingestion/pd/pd.page').then((m) => m.PdPage),
   apc: () => import('./pages/rdg/source-ingestion/apc/apc.page').then((m) => m.ApcPage),
+  access: () =>
+    import('./pages/rdg/connect-to-access/connect-to-access.page').then((m) => m.ConnectToAccessPage),
   placeholder,
 };
 
@@ -39,7 +41,7 @@ const aircraftModuleRoutes: Routes = AIRCRAFT_MODULES.flatMap((item) => [
         childLabel: child.label,
         childSlug: child.slug,
       },
-      loadComponent: pages.placeholder,
+      loadComponent: child.slug === 'connect-to-access' ? pages.access : pages.placeholder,
     },
     ...(child.children ?? []).map((grand) => ({
       path: `aircraft/:msn/${item.slug}/${child.slug}/${grand.slug}`,
@@ -76,6 +78,7 @@ export const routes: Routes = [
         loadComponent: pages.aircraft,
       },
       ...aircraftModuleRoutes,
+      { path: 'aircraft/:msn/r.d.g/dataset-generation', redirectTo: 'aircraft/:msn/r.d.g/connect-to-access', pathMatch: 'full' },
       { path: 'aircraft/:msn/r.d.p/pd', redirectTo: 'aircraft/:msn/r.d.p/plan-data/pd', pathMatch: 'full' },
       { path: 'aircraft/:msn/r.d.p/wo', redirectTo: 'aircraft/:msn/r.d.p/mro/wo', pathMatch: 'full' },
       { path: 'aircraft/:msn/r.d.p/ri', redirectTo: 'aircraft/:msn/r.d.p/mro/ri', pathMatch: 'full' },

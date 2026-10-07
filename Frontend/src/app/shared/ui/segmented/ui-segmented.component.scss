@@ -3,7 +3,7 @@
   flex-wrap: wrap;
   gap: 0.25rem;
   padding: 0.22rem;
-  border-radius: 12px;
+  border-radius: var(--radius);
   background: var(--fill);
 }
 
@@ -34,6 +34,10 @@ button.is-on {
 
 button:hover:not(.is-on) {
   color: var(--text);
+}
+
+app-ui-icon {
+  flex: 0 0 auto;
 }
 
 app-flag-icon {

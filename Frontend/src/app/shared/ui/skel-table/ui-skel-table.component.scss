@@ -26,11 +26,16 @@
 }
 
 .grid th {
+  position: sticky;
+  top: 0;
+  z-index: 4;
   min-width: 9.5rem;
-  color: #3a3a3c;
-  font-size: 0.72rem;
+  background: var(--table-head);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
   font-weight: 600;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   white-space: nowrap;
 }

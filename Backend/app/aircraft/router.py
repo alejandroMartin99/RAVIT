@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
-from app.api.schemas.aircraft import AircraftIn, AircraftOut, AircraftPatch
-from app.services import aircraft_store
+from app.aircraft import store as aircraft_store
+from app.aircraft.schemas import AircraftIn, AircraftOut, AircraftPatch
 
 router = APIRouter(prefix="/api/aircraft", tags=["aircraft"])
 

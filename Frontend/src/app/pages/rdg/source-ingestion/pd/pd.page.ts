@@ -1,13 +1,12 @@
-import { DatePipe } from '@angular/common';
+import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import { Component, ElementRef, HostListener, OnInit, computed, inject, signal, viewChild } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { PdCheckStatus, PdCompare, PdFailRow, PdIngestEvent, PdIssue, PdIssueRef, PdRow, PdService } from '../../../../services/pd.service';
+import { ConsistencyReport, ConsistencySource, PdCheckStatus, PdCompare, PdFailRow, PdIngestEvent, PdIssue, PdIssueRef, PdRow, PdService } from '../../../../services/pd.service';
 import { AircraftService } from '../../../../services/aircraft.service';
 import { WorkspaceService } from '../../../../services/workspace.service';
 import { ModuleIconComponent } from '../../../../shared/ui/module-icon/module-icon.component';
-import { UiButtonComponent, UiChipComponent, UiEmptyComponent, UiHelpComponent, UiIconActComponent, UiModalComponent, UiSegmentedComponent, UiSkelTableComponent, UiTableCellDirective, UiTableColumn, UiTableComponent, UiTableExpandDirective } from '../../../../shared/ui';
-import { SegmentOption } from '../../../../shared/ui/segmented/ui-segmented.component';
+import { UiButtonComponent, UiChipComponent, UiEmptyComponent, UiHelpComponent, UiIconActComponent, UiIconComponent, UiModalComponent, UiSkelTableComponent, UiTableCellDirective, UiTableColumn, UiTableComponent, UiTableExpandDirective } from '../../../../shared/ui';
 import { enterAircraft, routeMsn } from '../../../_shared/aircraft-context';
 import { cellOf, changeArrow, changedBases, compareFieldId, viewLikeValue, type PdCompareRow } from './pd-compare';
 import { forkJoin, of, timer } from 'rxjs';
@@ -23,7 +22,7 @@ interface IngestStep {
 @Component({
   selector: 'app-pd',
   standalone: true,
-  imports: [RouterLink, DatePipe, ModuleIconComponent, UiTableComponent, UiTableCellDirective, UiTableExpandDirective, UiModalComponent, UiButtonComponent, UiHelpComponent, UiChipComponent, UiEmptyComponent, UiIconActComponent, UiSkelTableComponent, UiSegmentedComponent],
+  imports: [RouterLink, DatePipe, NgTemplateOutlet, ModuleIconComponent, UiTableComponent, UiTableCellDirective, UiTableExpandDirective, UiModalComponent, UiButtonComponent, UiHelpComponent, UiChipComponent, UiEmptyComponent, UiIconActComponent, UiIconComponent, UiSkelTableComponent],
   providers: [DatePipe],
   templateUrl: './pd.page.html',
   styleUrl: '../../../_shared/source-page.scss',
@@ -57,11 +56,44 @@ export class PdPage implements OnInit {
 
   readonly issues = signal<PdIssueRef[]>([]);
   readonly history = signal<PdIssueRef[]>([]);
+  readonly rawOpen = signal(true);
+  readonly reportOpen = signal(false);
   readonly mode = signal<'view' | 'delta'>('view');
-  readonly modeOptions: SegmentOption[] = [
-    { value: 'view', label: 'View' },
-    { value: 'delta', label: 'Delta' },
+  readonly genSource = signal<'full' | 'delta' | null>(null);
+  readonly genStep = signal(1);
+  readonly genConfirmed = signal(false);
+  readonly genSteps = [
+    { id: 1, label: 'Select PD' },
+    { id: 2, label: 'Consistency report' },
+    { id: 3, label: 'Calculate WO, RI, SW' },
   ];
+  readonly genSources = signal<ConsistencyReport['sources'] | null>(null);
+  readonly genReport = signal<ConsistencyReport | null>(null);
+  readonly genBusy = signal(false);
+  readonly genError = signal<string | null>(null);
+  readonly genSourceList = computed(() => {
+    const pack = this.genSources() ?? this.genReport()?.sources;
+    const labels = { apc: 'APC', omp: 'OMP', acr: 'ACR', tt_brackdown: 'tt_brackdown' } as const;
+    return (Object.keys(labels) as (keyof typeof labels)[]).map((key) => {
+      const item = pack?.[key];
+      return {
+        key,
+        label: item?.label ?? labels[key],
+        loaded: !!item?.loaded,
+        detail: this.sourceDetail(item),
+      };
+    });
+  });
+  readonly missingSources = computed(() => this.genSourceList().filter((item) => !item.loaded).map((item) => item.label));
+  readonly canRunConsistency = computed(() => {
+    if (this.genBusy() || this.missingSources().length) {
+      return false;
+    }
+    if (this.genSource() === 'full') {
+      return !!this.selected();
+    }
+    return this.genSource() === 'delta' && this.canDelta();
+  });
   readonly selected = signal<string | null>(null);
   readonly selectedNew = signal<string | null>(null);
   readonly selectedOld = signal<string | null>(null);
@@ -149,6 +181,104 @@ export class PdPage implements OnInit {
     this.newOpen.set(false);
     this.oldOpen.set(false);
     this.colsOpen.update((open) => !open);
+  }
+
+  toggleRaw(): void {
+    this.closeIssues();
+    const next = !this.rawOpen();
+    this.rawOpen.set(next);
+    if (next) {
+      this.reportOpen.set(false);
+    }
+  }
+
+  toggleReport(): void {
+    this.closeIssues();
+    const next = !this.reportOpen();
+    this.reportOpen.set(next);
+    if (next) {
+      this.rawOpen.set(false);
+      this.loadGenSources();
+    }
+  }
+
+  setGenSource(next: string): void {
+    if (next !== 'full' && next !== 'delta') {
+      return;
+    }
+    if (next === this.genSource()) {
+      return;
+    }
+    this.closeIssues();
+    this.genSource.set(next);
+    this.genReport.set(null);
+    this.genError.set(null);
+    this.genConfirmed.set(false);
+    this.genStep.set(1);
+  }
+
+  goGenStep(id: number): void {
+    if (id === 1) {
+      this.genStep.set(1);
+      return;
+    }
+    if (id === 2 && this.genReport()) {
+      this.genStep.set(2);
+      return;
+    }
+    if (id === 3 && this.genConfirmed()) {
+      this.genStep.set(3);
+    }
+  }
+
+  canGoGenStep(id: number): boolean {
+    if (id === 1) {
+      return true;
+    }
+    if (id === 2) {
+      return !!this.genReport();
+    }
+    return this.genConfirmed();
+  }
+
+  confirmGen(): void {
+    if (!this.genReport()) {
+      return;
+    }
+    this.genConfirmed.set(true);
+    this.genStep.set(3);
+  }
+
+  runConsistency(): void {
+    if (!this.canRunConsistency()) {
+      return;
+    }
+    const source = this.genSource();
+    if (!source) {
+      return;
+    }
+    this.genBusy.set(true);
+    this.genError.set(null);
+    this.pdApi
+      .consistency(this.aircraftId, {
+        source,
+        issue: this.selected(),
+        new: this.selectedNew(),
+        old: this.selectedOld(),
+      })
+      .subscribe({
+        next: (payload) => {
+          this.genReport.set(payload);
+          this.genSources.set(payload.sources);
+          this.genBusy.set(false);
+          this.genConfirmed.set(false);
+          this.genStep.set(2);
+        },
+        error: (err: { error?: { detail?: string } }) => {
+          this.genBusy.set(false);
+          this.genError.set(err.error?.detail || 'Could not generate the consistency report.');
+        },
+      });
   }
 
   setMode(next: string): void {
@@ -648,12 +778,39 @@ export class PdPage implements OnInit {
     this.fileName.set(null);
   }
 
+  private sourceDetail(item?: ConsistencySource | null): string {
+    if (!item?.loaded) {
+      return 'Not loaded';
+    }
+    const version = item.version == null ? '' : String(item.version);
+    const padded = /^\d+$/.test(version) ? version.padStart(2, '0') : version;
+    const rows = item.rows ? `${item.rows} rows` : '';
+    return [padded, item.nation, rows, item.file].filter(Boolean).join(' · ') || 'Loaded';
+  }
+
+  private loadGenSources(): void {
+    this.pdApi.consistencySources(this.aircraftId).subscribe({
+      next: (pack) => this.genSources.set(pack),
+    });
+  }
+
   private reload(): void {
+    this.rawOpen.set(true);
+    this.reportOpen.set(false);
     this.mode.set('view');
+    this.genSource.set(null);
+    this.genReport.set(null);
+    this.genSources.set(null);
+    this.genError.set(null);
+    this.genConfirmed.set(false);
+    this.genStep.set(1);
     this.delta.set(null);
     this.loading.set(true);
     this.error.set(null);
     this.refreshList(true);
+    if (!this.ingest()) {
+      this.loadGenSources();
+    }
   }
 
   private refreshList(loadCurrent = false): void {
@@ -670,6 +827,11 @@ export class PdPage implements OnInit {
         this.selectedOld.set(target ? this.otherIssue(target) : null);
         if (!loadCurrent || this.ingest() || !target) {
           this.loading.set(false);
+          return;
+        }
+        if (!this.ingest()) {
+          this.loading.set(false);
+          this.loadIssue(target, true);
           return;
         }
         this.loadIssue(target);
@@ -689,15 +851,17 @@ export class PdPage implements OnInit {
     return this.pdApi.get(this.aircraftId, issue).pipe(tap((payload) => this.issueCache.set(issue, payload)));
   }
 
-  private loadIssue(issue: string): void {
+  private loadIssue(issue: string, quiet = false): void {
     const gen = ++this.loadGen;
-    this.loading.set(true);
-    this.skelCols.set([
-      { id: 'item_ref', label: 'Item ref' },
-      { id: 'task_reference', label: 'Task reference' },
-      { id: 'revision', label: 'Revision' },
-      { id: 'description', label: 'Description' },
-    ]);
+    if (!quiet) {
+      this.loading.set(true);
+      this.skelCols.set([
+        { id: 'item_ref', label: 'Item ref' },
+        { id: 'task_reference', label: 'Task reference' },
+        { id: 'revision', label: 'Revision' },
+        { id: 'description', label: 'Description' },
+      ]);
+    }
     forkJoin({
       payload: this.fetchIssue(issue),
       wait: timer(this.minLoadMs),

@@ -5,7 +5,7 @@
 
 .host {
   position: fixed;
-  top: calc(4.4rem + 0.9rem);
+  top: calc(var(--bar-h) + 0.9rem);
   right: 0;
   z-index: 80;
   display: grid;
@@ -22,9 +22,9 @@
   min-width: 20rem;
   max-width: min(30rem, calc(100vw - 2.2rem));
   padding: 1.05rem 1.2rem;
-  border-radius: 16px;
-  color: #fff;
-  box-shadow: 0 14px 36px rgba(16, 24, 40, 0.16);
+  border-radius: var(--radius-lg);
+  color: #f4f0e8;
+  box-shadow: var(--shadow-float);
   transform: translateX(110%);
   transition: transform 0.48s cubic-bezier(0.22, 1, 0.36, 1);
   will-change: transform;
@@ -40,11 +40,11 @@
 }
 
 .toast.is-ok {
-  background: #5ee0a0;
+  background: var(--ok);
 }
 
 .toast.is-fail {
-  background: #ff8b8b;
+  background: var(--danger);
 }
 
 .icon {

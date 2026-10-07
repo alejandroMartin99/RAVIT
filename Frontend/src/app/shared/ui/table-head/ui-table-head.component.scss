@@ -29,10 +29,11 @@
   align-items: center;
   gap: 0.22rem;
   padding: 0;
-  color: #3a3a3c;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
   font-size: 0.62rem;
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 

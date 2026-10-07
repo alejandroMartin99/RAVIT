@@ -7,22 +7,22 @@ from pathlib import Path
 from fastapi import HTTPException
 from fastapi.responses import FileResponse
 
+from app.aircraft.store import get_aircraft
 from app.catalog.fleet import NATIONS
-from app.services.aircraft_store import get_aircraft
-from app.services.source_validation import Context, load_rules, run_check, to_named_rows
+from app.core.paths import DATA_DIR
+from app.rdg.source_ingestion.validation import Context, load_rules, run_check, to_named_rows
 
 _CURRENT = "current"
-_DATA = Path(__file__).resolve().parent.parent.parent / "data"
 
 
 def _common_dir(nation: str) -> Path:
-    root = _DATA / "common" / "apc" / nation
+    root = DATA_DIR / "common" / "apc" / nation
     root.mkdir(parents=True, exist_ok=True)
     return root
 
 
 def _aircraft_dir(folder: str) -> Path:
-    root = _DATA / "fleet" / folder / "apc"
+    root = DATA_DIR / "fleet" / folder / "apc"
     root.mkdir(parents=True, exist_ok=True)
     return root
 
@@ -34,7 +34,7 @@ def _uploads_dir(nation: str) -> Path:
 
 
 def _history_path(nation: str) -> Path:
-    return _DATA / "common" / "apc" / nation / "history.json"
+    return DATA_DIR / "common" / "apc" / nation / "history.json"
 
 
 def _version_stem(version: int) -> str:

@@ -51,11 +51,14 @@
 
         <nav>
           @for (item of sideNav; track item.id) {
+            @if (item.id === 'rdg') {
+              <p class="nav-section">Aircraft modules</p>
+            }
             @if (isGroup(item)) {
-              <div class="group">
+              <div class="group" [class.is-open]="isExpanded(item)">
                 <button
                   type="button"
-                  class="item"
+                  class="item is-mod"
                   [class.is-off]="!canOpen(item)"
                   [class.is-open]="isExpanded(item)"
                   [attr.aria-disabled]="!canOpen(item)"
@@ -116,6 +119,7 @@
             } @else if (canOpen(item)) {
               <a
                 class="item"
+                [class.is-mod]="item.requiresAircraft"
                 [routerLink]="pathFor(item)"
                 routerLinkActive="is-on"
                 [routerLinkActiveOptions]="{ exact: !item.slug }"
@@ -129,6 +133,7 @@
             } @else {
               <span
                 class="item is-off"
+                [class.is-mod]="item.requiresAircraft"
                 (mouseenter)="onLockMove($event, item)"
                 (mousemove)="onLockMove($event, item)"
                 (mouseleave)="onLockLeave()"

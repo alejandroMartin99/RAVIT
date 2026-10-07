@@ -39,10 +39,6 @@
   background: transparent;
 }
 
-.sheet.is-bare .grid th {
-  background: transparent;
-}
-
 .sheet.filter-open,
 .sheet:has(.acts:hover) {
   overflow: auto;
@@ -59,11 +55,12 @@
   position: sticky;
   top: 0;
   z-index: 4;
+  isolation: isolate;
 }
 
 .grid th,
 .grid td {
-  padding: 0.38rem 0.5rem;
+  padding: 0.5rem 0.65rem;
   border-bottom: 1px solid var(--hairline);
   text-align: left;
   vertical-align: middle;
@@ -73,14 +70,14 @@
   position: sticky;
   top: 0;
   z-index: 4;
-  overflow: visible;
   min-width: 6rem;
-  background: var(--surface);
-  box-shadow: 0 1px 0 var(--hairline);
-  color: #3a3a3c;
+  background: var(--table-head);
+  box-shadow: 0 1px 0 var(--hairline), 0 6px 10px rgba(22, 20, 18, 0.08);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
   font-size: 0.62rem;
   font-weight: 600;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   white-space: nowrap;
 }
@@ -113,9 +110,9 @@
   min-width: 1.45rem;
   padding: 0.05rem 0.35rem;
   border: 0;
-  border-radius: 980px;
+  border-radius: var(--radius-pill);
   background: var(--fill);
-  color: #3a3a3c;
+  color: var(--text-secondary);
   cursor: pointer;
   font: inherit;
   font-size: 0.82rem;
@@ -138,7 +135,7 @@
   padding: 0.7rem 0.8rem;
   border: 1px solid var(--hairline);
   border-radius: 12px;
-  background: #fff;
+  background: var(--surface-raised);
   box-shadow: var(--shadow-float);
   color: var(--text);
   font-size: 0.86rem;
@@ -206,7 +203,7 @@
   min-width: 2.4rem;
   justify-content: center;
   padding: 0.1rem 0.35rem;
-  border-radius: 980px;
+  border-radius: var(--radius-pill);
   font-size: 0.65rem;
   font-weight: 700;
   letter-spacing: 0.03em;
@@ -245,8 +242,8 @@
   height: 1.7rem;
   border: 0;
   border-radius: 50%;
-  background: #efeff2;
-  color: #3a3a3c;
+  background: var(--fill);
+  color: var(--text-secondary);
   cursor: pointer;
 }
 
@@ -274,7 +271,7 @@
 
 .expand-row td {
   padding: 0;
-  background: #f6f6f8;
+  background: var(--fill);
   border-bottom: 1px solid var(--hairline);
 }
 

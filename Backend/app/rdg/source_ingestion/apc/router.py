@@ -1,7 +1,8 @@
 from fastapi import APIRouter, File, UploadFile
 from fastapi.responses import FileResponse, StreamingResponse
 
-from app.services import aircraft_store, apc_store
+from app.aircraft import store as aircraft_store
+from app.rdg.source_ingestion.apc import store as apc_store
 
 router = APIRouter(prefix="/api/aircraft/{aircraft_id}/apc", tags=["apc"])
 

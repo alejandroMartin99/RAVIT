@@ -42,7 +42,7 @@ export const SIDE_NAV: SideNavItem[] = [
     requiresAircraft: true,
     slug: 'r.d.g',
     description:
-      'Build the aircraft reference dataset: ingest source files, map them to the A400M model, run quality checks and generate the event baseline.',
+      'Build the aircraft reference dataset: ingest source files, map them to the A400M model, run quality checks and connect to Access.',
     children: [
       { id: 'rdg-ingest', label: 'Source ingestion', slug: 'source-ingestion', icon: 'ingest', children: [
           { id: 'rdg-ingest-apc', label: 'APC', slug: 'apc', icon: 'apc' },
@@ -50,7 +50,7 @@ export const SIDE_NAV: SideNavItem[] = [
         ] },
       { id: 'rdg-map', label: 'Data mapping', slug: 'data-mapping', icon: 'mapping' },
       { id: 'rdg-quality', label: 'Quality checks', slug: 'quality-checks', icon: 'quality' },
-      { id: 'rdg-generate', label: 'Dataset generation', slug: 'dataset-generation', icon: 'generate' },
+      { id: 'rdg-access', label: 'Connect to Access', slug: 'connect-to-access', icon: 'access' },
     ],
   },
   {

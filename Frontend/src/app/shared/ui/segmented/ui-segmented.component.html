@@ -7,6 +7,9 @@
       [class.is-on]="value() === opt.value"
       (click)="choose(opt.value)"
     >
+      @if (opt.icon) {
+        <app-ui-icon [name]="opt.icon" />
+      }
       @if (opt.nation) {
         <app-flag-icon [nation]="opt.nation" />
       }

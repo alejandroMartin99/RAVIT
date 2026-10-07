@@ -69,7 +69,7 @@ export const HELP_GUIDES: Record<string, HelpGuide> = {
   'pd-view': {
     title: 'Program Directive · production',
     summary:
-      'This is the live PD for the selected aircraft. Choose View to read one issue, or Delta to compare two. The current issue is the last successful ingest.',
+      'This is the live PD for the selected aircraft. Start with View raw files to inspect one issue or compare two, or generate WO, RI and SW deltas. The current issue is the last successful ingest.',
     sections: [
       {
         heading: 'This tab',
@@ -78,10 +78,10 @@ export const HELP_GUIDES: Record<string, HelpGuide> = {
       {
         heading: 'What you can do',
         items: [
-          'Choose View or Delta in the header. They are separate modes.',
+          'View raw files is expanded by default. Pick View one PD or Compare two PDs as two actions, not tabs. Filters follow that choice.',
           'View shows one issue, including applicability flags per version.',
-          'Delta asks for New and Old, then Generate. Column chips apply to the table on screen.',
-          'Go to Source ingestion if no PD has been loaded yet.',
+          'Compare asks for New and Old, then Generate. Column chips apply to the table on screen.',
+          'Generate delta WO, RI, SW is a three-step process: select Full or Delta PD, run the consistency report, then calculate WO, RI and SW. APC, OMP, ACR and tt_brackdown must all be loaded or the report cannot launch.',
         ],
       },
       {
@@ -178,6 +178,41 @@ export const HELP_GUIDES: Record<string, HelpGuide> = {
         items: [
           'Shown data comes from this aircraft folder: data/fleet/{MSN}/apc/.',
           'The library of versions stays in data/common/apc/{nation}/. Changing assignment does not delete other aircraft copies.',
+        ],
+      },
+    ],
+  },
+  'connect-to-access': {
+    title: 'Connect to Access',
+    summary:
+      'Select an Access database for this aircraft. RAVIT detects which catalog tables are in the file. Accept to overwrite the stored copies, or discard to keep what you have.',
+    sections: [
+      {
+        heading: 'This tab',
+        body: 'R.D.G. follow-up Access ingest. Tables currently stored for this MSN are listed first. A new file can replace them in one step.',
+      },
+      {
+        heading: 'What you can do',
+        items: [
+          'Select an Access source (.mdb or .accdb).',
+          'See which catalog tables exist in that file and which ones would replace the current store.',
+          'Accept to ingest the selected tables, or discard to leave the stored tables unchanged.',
+        ],
+      },
+      {
+        heading: 'Ingest list',
+        items: [
+          'Only tables in the Access catalog are ingested. Extra tables in the file are ignored.',
+          'Matching uses the catalog id, label and aliases (case and punctuation ignored).',
+          'F-Up tables: WO_main_database, RI_main_database, SW_main_database, Ageing_main_database, APC_APPROVED, APC_POSITION, APC_POSITIONS, master trazabilidad, OMP_MaintenanceTask, tt_brackdown.',
+          'Empty or missing stored tables are selected to ingest. Occupied tables stay unchecked until you confirm overwrite.',
+        ],
+      },
+      {
+        heading: 'Storage',
+        items: [
+          'Tables extracted from Access are stored next to APC, not in the .mdb: data/fleet/{MSN}/Access/{table}/current.json.',
+          'Accept overwrites current.json for every selected table.',
         ],
       },
     ],

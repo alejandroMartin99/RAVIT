@@ -1,16 +1,12 @@
 from fastapi import APIRouter, File, UploadFile
 from fastapi.responses import FileResponse, StreamingResponse
 
-from app.services import aircraft_store, pd_store
+from app.aircraft import store as aircraft_store
+from app.rdg.source_ingestion.pd import store as pd_store
 
-router = APIRouter(prefix="/api/aircraft/{aircraft_id}/pd", tags=["pd"])
+router = APIRouter(prefix="/api/aircraft/{aircraft_id}/pd", tags=["rdg-pd"])
 
 _SSE = {"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
-
-
-@router.get("/")
-def list_pd(aircraft_id: str) -> dict:
-    return pd_store.list_issues(aircraft_id)
 
 
 @router.delete("/history/{attempt_id}")
@@ -42,16 +38,6 @@ def commit_pd(aircraft_id: str, version: str) -> dict:
 @router.delete("/ingest/pending")
 def discard_pd(aircraft_id: str, version: str) -> dict:
     return pd_store.discard_pending(aircraft_id, version)
-
-
-@router.get("/compare")
-def compare_pd(aircraft_id: str, new: str, old: str) -> dict:
-    return pd_store.compare_issues(aircraft_id, new, old)
-
-
-@router.get("/{issue}")
-def get_pd(aircraft_id: str, issue: str) -> dict:
-    return pd_store.get_issue(aircraft_id, issue)
 
 
 @router.post("/", status_code=201)

@@ -1,0 +1,16 @@
+{
+  "source": "access",
+  "label": "Connect to Access",
+  "tables": [
+    { "id": "WO_MAIN", "label": "WO_main_database" },
+    { "id": "RI_MAIN", "label": "RI_main_database" },
+    { "id": "SW_MAIN", "label": "SW_main_database" },
+    { "id": "AGEING_MAIN", "label": "Ageing_main_database" },
+    { "id": "APC_APPROVED", "label": "APC_APPROVED" },
+    { "id": "APC_POSITION", "label": "APC_POSITION" },
+    { "id": "APC_POSITIONS", "label": "APC_POSITIONS" },
+    { "id": "MASTER_TRAZABILIDAD", "label": "master trazabilidad" },
+    { "id": "OMP_MAINTENANCE_TASK", "label": "OMP_MaintenanceTask" },
+    { "id": "TT_BRACKDOWN", "label": "tt_brackdown", "aliases": ["tt_breakdown"] }
+  ]
+}

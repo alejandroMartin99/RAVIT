@@ -34,6 +34,31 @@ export interface PdIssue {
   rows: PdRow[];
 }
 
+export interface ConsistencySource {
+  label: string;
+  loaded: boolean;
+  rows: number;
+  version?: string | number | null;
+  nation?: string | null;
+  file?: string | null;
+}
+
+export interface ConsistencyReport {
+  ok: boolean;
+  ready: boolean;
+  message: string;
+  source: 'full' | 'delta';
+  pd: { issue?: string | null; rows: number };
+  delta?: { new?: string | null; old?: string | null; rows: number } | null;
+  sources: {
+    apc: ConsistencySource;
+    omp: ConsistencySource;
+    acr: ConsistencySource;
+    tt_brackdown: ConsistencySource;
+  };
+  findings: unknown[];
+}
+
 export interface PdCompare {
   new: string;
   old: string | null;
@@ -102,6 +127,27 @@ export class PdService {
     return this.http.get<PdCompare>(`${this.url(aircraftId)}compare`, {
       params: { new: neu, old },
     });
+  }
+
+  consistencySources(aircraftId: string) {
+    return this.http.get<ConsistencyReport['sources']>(`${this.url(aircraftId)}consistency/sources`);
+  }
+
+  consistency(
+    aircraftId: string,
+    opts: { source: 'full' | 'delta'; issue?: string | null; new?: string | null; old?: string | null },
+  ) {
+    const params: Record<string, string> = { source: opts.source };
+    if (opts.issue) {
+      params['issue'] = opts.issue;
+    }
+    if (opts.new) {
+      params['new'] = opts.new;
+    }
+    if (opts.old) {
+      params['old'] = opts.old;
+    }
+    return this.http.get<ConsistencyReport>(`${this.url(aircraftId)}consistency`, { params });
   }
 
   create(aircraftId: string): Observable<PdIssue> {

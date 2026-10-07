@@ -5,28 +5,59 @@
       <p class="kicker">{{ code() }}</p>
       <div class="mod-title">
         <h1>{{ title() }}</h1>
-        @if (!ingest() && issues().length) {
-          <app-ui-segmented class="pd-mode" [options]="modeOptions" [value]="mode()" (valueChange)="setMode($event)" />
-        }
       </div>
     </div>
     <app-ui-help class="mod-help" [topic]="helpTopic()" />
   </header>
 
-  @if (!ingest() && issues().length) {
-    <div class="pd-bar" [class.is-delta]="mode() === 'delta'">
-      @if (mode() === 'view') {
-        <div class="pd-row">
-          <div class="pick" [class.is-open]="issueOpen()" (click)="$event.stopPropagation()">
-            <button type="button" class="pick-btn" (click)="toggleIssues()">
-              <span class="pick-val">{{ issueCode(selected()) }}</span>
+  @if (!ingest()) {
+    <div class="pd-process">
+      <ng-template #oneIssuePick>
+        <div class="pick" [class.is-open]="issueOpen()" (click)="$event.stopPropagation()">
+          <button type="button" class="pick-btn" (click)="toggleIssues()">
+            <span class="pick-val">{{ issueCode(selected()) }}</span>
+            <span class="pick-chev" aria-hidden="true"></span>
+          </button>
+          @if (issueOpen()) {
+            <ul class="pick-list">
+              @for (item of issues(); track item.id) {
+                <li>
+                  <button type="button" [class.is-on]="item.issue === selected()" (click)="selectIssue(item.issue || item.id)">
+                    <span>{{ issueCode(item) }}</span>
+                    @if (item.current) {
+                      <span class="tag">Current</span>
+                    }
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      </ng-template>
+      <ng-template #sourceMarks>
+        <div class="pd-marks" role="list" aria-label="Required sources">
+          @for (item of genSourceList(); track item.key) {
+            <span
+              role="listitem"
+              class="pd-mark"
+              [class.is-off]="!item.loaded"
+              [attr.aria-label]="item.loaded ? 'Ready' : 'Missing'"
+            ></span>
+          }
+        </div>
+      </ng-template>
+      <ng-template #twoIssuePick>
+        <div class="pick-pair">
+          <div class="pick" [class.is-open]="newOpen()" (click)="$event.stopPropagation()">
+            <button type="button" class="pick-btn" (click)="toggleNew()">
+              <span class="pick-val"><span class="pick-role">New</span> {{ issueCode(selectedNew()) }}</span>
               <span class="pick-chev" aria-hidden="true"></span>
             </button>
-            @if (issueOpen()) {
+            @if (newOpen()) {
               <ul class="pick-list">
                 @for (item of issues(); track item.id) {
                   <li>
-                    <button type="button" [class.is-on]="item.issue === selected()" (click)="selectIssue(item.issue || item.id)">
+                    <button type="button" [class.is-on]="item.issue === selectedNew()" (click)="selectNew(item.issue || item.id)">
                       <span>{{ issueCode(item) }}</span>
                       @if (item.current) {
                         <span class="tag">Current</span>
@@ -37,96 +68,221 @@
               </ul>
             }
           </div>
-          <div class="col-chips">
-            <app-ui-chip [on]="allIssues()" (click)="toggleAllIssues(); $event.stopPropagation()">All issues</app-ui-chip>
-            <app-ui-chip [on]="mainColumns()" (click)="toggleMainColumns(); $event.stopPropagation()">Main columns</app-ui-chip>
-            <div class="col-pick" [class.is-open]="colsOpen()" (click)="$event.stopPropagation()">
-              <app-ui-icon-act name="plus" tip="Columns" size="sm" (act)="toggleCols()" />
-              @if (colsOpen()) {
-                <ul class="pick-list">
-                  @for (col of colChoices(); track col.id) {
-                    <li>
-                      <button type="button" [class.is-on]="colOn(col.id)" (click)="toggleCol(col.id)">
-                        <span>{{ col.label }}</span>
-                        @if (colOn(col.id)) {
-                          <span class="col-check" aria-hidden="true"></span>
-                        }
-                      </button>
-                    </li>
-                  }
-                </ul>
-              }
-            </div>
+          <span class="pick-vs">vs</span>
+          <div class="pick" [class.is-open]="oldOpen()" (click)="$event.stopPropagation()">
+            <button type="button" class="pick-btn" (click)="toggleOld()">
+              <span class="pick-val"><span class="pick-role">Old</span> {{ issueCode(selectedOld() || '—') }}</span>
+              <span class="pick-chev" aria-hidden="true"></span>
+            </button>
+            @if (oldOpen()) {
+              <ul class="pick-list">
+                @for (item of issues(); track item.id) {
+                  <li>
+                    <button type="button" [class.is-on]="item.issue === selectedOld()" (click)="selectOld(item.issue || item.id)">
+                      <span>{{ issueCode(item) }}</span>
+                      @if (item.current) {
+                        <span class="tag">Current</span>
+                      }
+                    </button>
+                  </li>
+                }
+              </ul>
+            }
           </div>
         </div>
-      } @else {
-        <div class="pd-row">
-          <div class="pick-pair">
-            <div class="pick" [class.is-open]="newOpen()" (click)="$event.stopPropagation()">
-              <button type="button" class="pick-btn" (click)="toggleNew()">
-                <span class="pick-val"><span class="pick-role">New</span> {{ issueCode(selectedNew()) }}</span>
-                <span class="pick-chev" aria-hidden="true"></span>
+      </ng-template>
+
+      <article class="pd-expand">
+        <button type="button" class="pd-expand-head" [attr.aria-expanded]="rawOpen()" (click)="toggleRaw()">
+          <span class="pd-expand-label">
+            <app-ui-icon name="files" />
+            View raw files
+          </span>
+          <span class="pd-expand-chev" [class.is-open]="rawOpen()" aria-hidden="true"></span>
+        </button>
+        @if (rawOpen()) {
+          <div class="pd-expand-body">
+            <div class="pd-choices">
+              <button type="button" class="pd-choice" [class.is-on]="mode() === 'view'" (click)="setMode('view')">
+                <app-ui-icon name="view" />
+                <span>
+                  <span class="pd-choice-title">View one PD</span>
+                  <span class="pd-choice-hint">Inspect a single issue</span>
+                </span>
               </button>
-              @if (newOpen()) {
-                <ul class="pick-list">
-                  @for (item of issues(); track item.id) {
-                    <li>
-                      <button type="button" [class.is-on]="item.issue === selectedNew()" (click)="selectNew(item.issue || item.id)">
-                        <span>{{ issueCode(item) }}</span>
-                        @if (item.current) {
-                          <span class="tag">Current</span>
-                        }
-                      </button>
-                    </li>
-                  }
-                </ul>
-              }
-            </div>
-            <span class="pick-vs">vs</span>
-            <div class="pick" [class.is-open]="oldOpen()" (click)="$event.stopPropagation()">
-              <button type="button" class="pick-btn" (click)="toggleOld()">
-                <span class="pick-val"><span class="pick-role">Old</span> {{ issueCode(selectedOld() || '—') }}</span>
-                <span class="pick-chev" aria-hidden="true"></span>
+              <button type="button" class="pd-choice" [class.is-on]="mode() === 'delta'" (click)="setMode('delta')">
+                <app-ui-icon name="compare" />
+                <span>
+                  <span class="pd-choice-title">Compare two PDs</span>
+                  <span class="pd-choice-hint">New versus old, then a delta</span>
+                </span>
               </button>
-              @if (oldOpen()) {
-                <ul class="pick-list">
-                  @for (item of issues(); track item.id) {
-                    <li>
-                      <button type="button" [class.is-on]="item.issue === selectedOld()" (click)="selectOld(item.issue || item.id)">
-                        <span>{{ issueCode(item) }}</span>
-                        @if (item.current) {
-                          <span class="tag">Current</span>
-                        }
-                      </button>
-                    </li>
-                  }
-                </ul>
-              }
             </div>
-          </div>
-          <div class="col-chips">
-            <app-ui-chip [on]="allIssues()" (click)="toggleAllIssues(); $event.stopPropagation()">All issues</app-ui-chip>
-            <app-ui-chip [on]="mainColumns()" (click)="toggleMainColumns(); $event.stopPropagation()">Main columns</app-ui-chip>
-            <div class="col-pick" [class.is-open]="colsOpen()" (click)="$event.stopPropagation()">
-              <app-ui-icon-act name="plus" tip="Columns" size="sm" (act)="toggleCols()" />
-              @if (colsOpen()) {
-                <ul class="pick-list">
-                  @for (col of colChoices(); track col.id) {
-                    <li>
-                      <button type="button" [class.is-on]="colOn(col.id)" (click)="toggleCol(col.id)">
-                        <span>{{ col.label }}</span>
-                        @if (colOn(col.id)) {
-                          <span class="col-check" aria-hidden="true"></span>
+            @if (issues().length) {
+              <div class="pd-row">
+                @if (mode() === 'view') {
+                  <ng-container *ngTemplateOutlet="oneIssuePick" />
+                } @else {
+                  <ng-container *ngTemplateOutlet="twoIssuePick" />
+                }
+                <div class="col-chips">
+                  <app-ui-chip [on]="allIssues()" (click)="toggleAllIssues(); $event.stopPropagation()">All issues</app-ui-chip>
+                  <app-ui-chip [on]="mainColumns()" (click)="toggleMainColumns(); $event.stopPropagation()">Main columns</app-ui-chip>
+                  <div class="col-pick" [class.is-open]="colsOpen()" (click)="$event.stopPropagation()">
+                    <app-ui-icon-act name="plus" tip="Columns" size="sm" (act)="toggleCols()" />
+                    @if (colsOpen()) {
+                      <ul class="pick-list">
+                        @for (col of colChoices(); track col.id) {
+                          <li>
+                            <button type="button" [class.is-on]="colOn(col.id)" (click)="toggleCol(col.id)">
+                              <span>{{ col.label }}</span>
+                              @if (colOn(col.id)) {
+                                <span class="col-check" aria-hidden="true"></span>
+                              }
+                            </button>
+                          </li>
                         }
-                      </button>
-                    </li>
+                      </ul>
+                    }
+                  </div>
+                </div>
+              </div>
+            }
+            @if (loading()) {
+              <app-ui-skel-table [cols]="skelCols()" />
+            } @else if (mode() === 'delta' && !delta()) {
+              <app-ui-empty
+                kicker="Compare"
+                [title]="canDelta() ? 'Generate a delta between these issues' : 'Need two issues to compare'"
+                hint="Pick New and Old, then Generate. Field checks skip the newest issue column."
+              >
+                @if (canDelta()) {
+                  <app-ui-button (click)="generateDelta()">Generate</app-ui-button>
+                } @else {
+                  <a class="go" [routerLink]="ingestPath()">Upload a PD</a>
+                }
+              </app-ui-empty>
+            } @else if (mode() === 'delta') {
+              <div class="pd-split">
+                <div class="pd-split-main">
+                  @if (!deltaNew().length && !deltaDiscard().length && !deltaChange().length) {
+                    <app-ui-empty kicker="Compare" title="No differences between these issues" hint="Shared fields match. The newest issue column is not compared field by field." />
                   }
-                </ul>
-              }
-            </div>
+                  @if (deltaLineRows().length) {
+                    <p class="pd-delta-kicker">{{ deltaLineNote() }}</p>
+                    <app-ui-table [framed]="false" [columns]="deltaViewCols()" [rows]="deltaLineRows()" [trackBy]="trackCompare" [rowClass]="compareRowClass" />
+                  }
+                  @if (deltaChange().length) {
+                    <p class="pd-delta-kicker">{{ deltaChange().length === 1 ? '1 change' : deltaChange().length + ' changes' }}</p>
+                    <app-ui-table [framed]="false" [columns]="deltaChangeCols()" [rows]="deltaChange()" [trackBy]="trackCompare" empty="No field changes in the selected columns." />
+                  }
+                </div>
+                <ng-container *ngTemplateOutlet="sourceMarks" />
+              </div>
+            } @else if (issue()) {
+              <div class="pd-split">
+                <app-ui-table [framed]="false" [columns]="pdCols()" [rows]="issue()!.rows" [trackBy]="trackRow" />
+                <ng-container *ngTemplateOutlet="sourceMarks" />
+              </div>
+            } @else {
+              <app-ui-empty
+                kicker="No Program Directive loaded"
+                title="Upload a PD source for this aircraft"
+                hint="Production shows the current issue. Upload starts in R.D.G. Source ingestion."
+              >
+                <a class="go" [routerLink]="ingestPath()">Upload a PD</a>
+              </app-ui-empty>
+            }
           </div>
-        </div>
-      }
+        }
+      </article>
+      <article class="pd-expand">
+        <button type="button" class="pd-expand-head" [attr.aria-expanded]="reportOpen()" (click)="toggleReport()">
+          <span class="pd-expand-label">
+            <app-ui-icon name="plus" />
+            Generate delta WO, RI, SW
+          </span>
+          <span class="pd-expand-chev" [class.is-open]="reportOpen()" aria-hidden="true"></span>
+        </button>
+        @if (reportOpen()) {
+          <div class="pd-expand-body">
+            <ol class="pd-stepper">
+              @for (step of genSteps; track step.id) {
+                <li [class.is-on]="genStep() === step.id" [class.is-done]="genStep() > step.id">
+                  @if (step.id > 1) {
+                    <span class="pd-stepper-line" [class.is-on]="genStep() >= step.id"></span>
+                  }
+                  <button type="button" class="pd-stepper-btn" [disabled]="!canGoGenStep(step.id)" (click)="goGenStep(step.id)">
+                    <span class="pd-stepper-num">{{ genStep() > step.id ? '✓' : step.id }}</span>
+                    <span class="pd-stepper-label">{{ step.label }}</span>
+                  </button>
+                </li>
+              }
+            </ol>
+            @if (genStep() === 1) {
+              <div class="pd-split">
+                <div class="pd-gen-pick">
+                  <div class="pd-choices">
+                    <button type="button" class="pd-choice" [class.is-on]="genSource() === 'full'" (click)="setGenSource('full')">
+                      <app-ui-icon name="view" />
+                      <span>
+                        <span class="pd-choice-title">Full PD</span>
+                        <span class="pd-choice-hint">Run consistency on one issue</span>
+                      </span>
+                    </button>
+                    <button type="button" class="pd-choice" [class.is-on]="genSource() === 'delta'" (click)="setGenSource('delta')">
+                      <app-ui-icon name="compare" />
+                      <span>
+                        <span class="pd-choice-title">Delta PD</span>
+                        <span class="pd-choice-hint">New versus old, same pick as Compare</span>
+                      </span>
+                    </button>
+                  </div>
+                  @if (genSource() && issues().length) {
+                    <div class="pd-row">
+                      @if (genSource() === 'full') {
+                        <ng-container *ngTemplateOutlet="oneIssuePick" />
+                      } @else {
+                        <ng-container *ngTemplateOutlet="twoIssuePick" />
+                      }
+                    </div>
+                  }
+                </div>
+                <ng-container *ngTemplateOutlet="sourceMarks" />
+              </div>
+              @if (genError(); as message) {
+                <p class="banner">{{ message }}</p>
+              }
+              @if (genSource()) {
+                <app-ui-button [disabled]="!canRunConsistency()" (click)="runConsistency()">
+                  {{ genBusy() ? 'Generating…' : 'Generate consistency report' }}
+                </app-ui-button>
+              }
+              @if (genSource() && missingSources().length) {
+                <p class="pd-expand-empty">Cannot launch. Required sources are missing.</p>
+              } @else if (genSource() === 'delta' && !canDelta()) {
+                <p class="pd-expand-empty">Pick two different PD issues.</p>
+              }
+            }
+            @if (genStep() === 2) {
+              @if (genReport(); as report) {
+                <p class="pd-expand-empty">{{ report.message }}</p>
+                <div class="actions">
+                  <app-ui-button variant="ghost" (click)="goGenStep(1)">Back</app-ui-button>
+                  <app-ui-button (click)="confirmGen()">Confirm</app-ui-button>
+                </div>
+              }
+            }
+            @if (genStep() === 3) {
+              <app-ui-empty
+                kicker="Step 3"
+                title="Calculate WO, RI, SW"
+                hint="Unlocked after the consistency report is confirmed. Calculation comes next."
+              />
+            }
+          </div>
+        }
+      </article>
     </div>
   }
 
@@ -236,42 +392,6 @@
         <button type="button" class="go" (click)="openPicker()">Upload a PD</button>
       </app-ui-empty>
     }
-  } @else if (loading()) {
-    <app-ui-skel-table [cols]="skelCols()" />
-  } @else if (mode() === 'delta' && !delta()) {
-    <app-ui-empty
-      kicker="Delta PD"
-      [title]="canDelta() ? 'Generate a delta between these issues' : 'Need two issues to compare'"
-      hint="Pick New and Old, then Generate. Field checks skip the newest issue column."
-    >
-      @if (canDelta()) {
-        <app-ui-button (click)="generateDelta()">Generate</app-ui-button>
-      } @else {
-        <a class="go" [routerLink]="ingestPath()">Upload a PD</a>
-      }
-    </app-ui-empty>
-  } @else if (mode() === 'delta') {
-    @if (!deltaNew().length && !deltaDiscard().length && !deltaChange().length) {
-      <app-ui-empty kicker="Delta PD" title="No differences between these issues" hint="Shared fields match. The newest issue column is not compared field by field." />
-    }
-    @if (deltaLineRows().length) {
-      <p class="pd-delta-kicker">{{ deltaLineNote() }}</p>
-      <app-ui-table [columns]="deltaViewCols()" [rows]="deltaLineRows()" [trackBy]="trackCompare" [rowClass]="compareRowClass" />
-    }
-    @if (deltaChange().length) {
-      <p class="pd-delta-kicker">{{ deltaChange().length === 1 ? '1 change' : deltaChange().length + ' changes' }}</p>
-      <app-ui-table [columns]="deltaChangeCols()" [rows]="deltaChange()" [trackBy]="trackCompare" empty="No field changes in the selected columns." />
-    }
-  } @else if (issue()) {
-    <app-ui-table [columns]="pdCols()" [rows]="issue()!.rows" [trackBy]="trackRow" />
-  } @else {
-    <app-ui-empty
-      kicker="No Program Directive loaded"
-      title="Upload a PD source for this aircraft"
-      hint="Production shows the current issue. Upload starts in R.D.G. Source ingestion."
-    >
-      <a class="go" [routerLink]="ingestPath()">Upload a PD</a>
-    </app-ui-empty>
   }
 </section>
 

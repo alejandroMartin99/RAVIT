@@ -1,0 +1,91 @@
+<section class="wrap">
+  <header class="mod">
+    <app-module-icon [name]="icon" />
+    <div>
+      <p class="kicker">{{ code() }}</p>
+      <div class="mod-title">
+        <h1>{{ title() }}</h1>
+        <app-ui-help topic="connect-to-access" />
+      </div>
+    </div>
+  </header>
+
+  @if (error(); as message) {
+    <p class="banner">{{ message }}</p>
+  }
+
+  <input
+    #picker
+    class="visually-hidden"
+    type="file"
+    accept=".mdb,.accdb"
+    (change)="onPick($event)"
+  />
+
+  <div class="toolbar">
+    <p class="hint tight">
+      @if (fileName(); as name) {
+        {{ name }}
+      } @else {
+        Select an F-Up Access database. Empty tables are ingested; occupied ones ask before overwrite.
+      }
+    </p>
+    <button type="button" class="go" [disabled]="busy()" (click)="openPicker()">
+      Select Access file
+    </button>
+  </div>
+
+  @if (scan(); as items) {
+    <p class="pd-delta-kicker">Detected in this file</p>
+    <div class="access-list">
+      @for (item of found(items); track item.id) {
+        <label class="access-row">
+          <input
+            type="checkbox"
+            [checked]="selected().has(item.id)"
+            [disabled]="busy()"
+            (change)="toggle(item.id, item.in_file)"
+          />
+          <span class="access-meta">
+            <p class="access-name">{{ item.label }}</p>
+            <p class="access-note">{{ note(item) }}</p>
+          </span>
+          @if (occupied(item)) {
+            <span class="tag">Overwrite</span>
+          } @else if (item.current) {
+            <span class="tag">Empty</span>
+          } @else {
+            <span class="tag">New</span>
+          }
+        </label>
+      } @empty {
+        <p class="pd-expand-empty">None of the F-Up tables are in this file.</p>
+      }
+    </div>
+    <div class="actions">
+      <app-ui-button variant="ghost" [disabled]="busy()" (click)="discard()">Discard</app-ui-button>
+      <app-ui-button [disabled]="!canAccept()" (click)="accept()">Accept</app-ui-button>
+    </div>
+  } @else if (!loading()) {
+    @if (stored().length) {
+      <p class="pd-delta-kicker">Stored for this aircraft</p>
+      <div class="access-list">
+        @for (item of stored(); track item.id) {
+          <div class="access-row">
+            <span class="access-meta">
+              <p class="access-name">{{ item.label }}</p>
+              <p class="access-note">{{ storedNote(item) }}</p>
+            </span>
+            <span class="tag">Stored</span>
+          </div>
+        }
+      </div>
+    } @else {
+      <app-ui-empty
+        kicker="Connect to Access"
+        title="No Access tables stored"
+        hint="Select an F-Up .mdb or .accdb. Detected tables fill empty stores; occupied ones ask before overwrite."
+      />
+    }
+  }
+</section>

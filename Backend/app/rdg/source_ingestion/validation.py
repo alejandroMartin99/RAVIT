@@ -8,7 +8,9 @@ from fastapi import HTTPException
 from openpyxl import Workbook, load_workbook
 from openpyxl.worksheet.worksheet import Worksheet
 
-_ROOT = Path(__file__).resolve().parent.parent.parent / "data" / "validations" / "sources"
+from app.core.paths import DATA_DIR
+
+_ROOT = DATA_DIR / "validations" / "sources"
 
 
 def load_rules(source: str) -> dict:

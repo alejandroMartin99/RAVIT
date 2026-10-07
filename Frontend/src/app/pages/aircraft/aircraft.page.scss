@@ -3,7 +3,7 @@
 }
 
 .wrap {
-  min-height: calc(100vh - 4.4rem);
+  min-height: calc(100vh - var(--bar-h));
   padding: 1.6rem 2rem 2rem;
   background: var(--bg);
 }
@@ -15,9 +15,10 @@
 .kicker {
   margin: 0;
   color: var(--text-secondary);
-  font-size: 0.72rem;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
   font-weight: 600;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
@@ -53,13 +54,14 @@ h1 {
 }
 
 .code {
-  font-size: 1.45rem;
-  font-weight: 700;
-  letter-spacing: -0.03em;
+  font-family: var(--font-mono);
+  font-size: 1.2rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
 }
 
 .name {
-  color: #3a3a3c;
+  color: var(--text-secondary);
   font-size: 1rem;
   line-height: 1.35;
 }

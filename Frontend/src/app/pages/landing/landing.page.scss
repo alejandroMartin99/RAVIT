@@ -10,7 +10,7 @@
   display: grid;
   place-items: center;
   min-width: 0;
-  height: calc(100dvh - 4.4rem);
+  height: calc(100dvh - var(--bar-h));
   padding: 2rem clamp(1.25rem, 4vw, 4rem);
   overflow: hidden;
 }
@@ -37,8 +37,7 @@
   overflow: hidden;
   border: 1px solid var(--hairline);
   border-radius: var(--radius-lg);
-  background: rgba(255, 255, 255, 0.94);
-  backdrop-filter: blur(22px) saturate(1.4);
+  background: var(--surface);
   box-shadow: var(--shadow-float);
 }
 
@@ -64,7 +63,7 @@
 
 h1 {
   margin: 0.15rem 0 0;
-  font-size: clamp(1.55rem, 3vw, 2rem);
+  font-size: clamp(1.35rem, 2.4vw, 1.7rem);
   font-weight: 600;
   letter-spacing: -0.03em;
 }
@@ -80,7 +79,7 @@ h1 {
   min-height: 2.4rem;
   padding: 0.45rem 0.8rem;
   border: 0;
-  border-radius: 980px;
+  border-radius: var(--radius);
   background: var(--fill);
   color: var(--text);
 }
@@ -114,9 +113,10 @@ app-ui-button {
 }
 
 .msn {
-  font-size: 1.05rem;
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
   font-weight: 600;
-  letter-spacing: -0.02em;
+  letter-spacing: 0.04em;
   white-space: nowrap;
 }
 

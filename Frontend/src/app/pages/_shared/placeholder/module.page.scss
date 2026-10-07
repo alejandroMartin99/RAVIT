@@ -3,7 +3,7 @@
 }
 
 .wrap {
-  min-height: calc(100vh - 4.4rem);
+  min-height: calc(100vh - var(--bar-h));
   padding: 1.6rem 2rem 2rem;
   background: var(--bg);
 }
@@ -28,9 +28,10 @@
 .kicker {
   margin: 0;
   color: var(--text-secondary);
-  font-size: 0.72rem;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
   font-weight: 600;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
@@ -54,7 +55,7 @@ h1 {
   gap: 0.85rem;
   padding: 1.05rem 1.3rem;
   border-bottom: 1px solid var(--hairline);
-  color: #111;
+  color: var(--text);
   text-decoration: none;
 }
 

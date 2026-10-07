@@ -9,9 +9,10 @@ from pathlib import Path
 from fastapi import HTTPException
 from fastapi.responses import FileResponse
 
-from app.services.aircraft_store import get_aircraft
-from app.services.pd_compare import generate_delta_pd
-from app.services.source_validation import Context, fill_issue_label, load_rules, run_check, to_pd_rows, _version_from_filename
+from app.aircraft.store import get_aircraft
+from app.core.paths import DATA_DIR
+from app.rdg.source_ingestion.validation import Context, fill_issue_label, load_rules, run_check, to_pd_rows, _version_from_filename
+from app.rdp.plan_data.pd.compare import generate_delta_pd
 
 _ISSUE_RE = re.compile(r"^issue(\d{2})$")
 
@@ -34,7 +35,7 @@ _TEMPLATES = [
 
 
 def _pd_dir(folder: str) -> Path:
-    root = Path(__file__).resolve().parent.parent.parent / "data" / "fleet" / folder / "pd"
+    root = DATA_DIR / "fleet" / folder / "pd"
     root.mkdir(parents=True, exist_ok=True)
     return root
 
