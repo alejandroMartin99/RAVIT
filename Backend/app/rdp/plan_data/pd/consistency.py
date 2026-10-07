@@ -39,7 +39,7 @@ def load_acr(aircraft_id: str) -> dict | None:
 
 
 def load_omp(aircraft_id: str) -> dict | None:
-    return _load_json(aircraft_id, "omp")
+    return access_store.get_table(aircraft_id, "OMP_MAINTENANCE_TASK")
 
 
 def load_tt_brackdown(aircraft_id: str) -> dict | None:
